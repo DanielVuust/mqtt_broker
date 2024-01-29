@@ -21,51 +21,51 @@ fn handle_client(mut stream: TcpStream) {
 
                 // Handles client message types
                 match MessageType::from_u8(msg_type) {
-                    // msg_type = Connect
+                    // Connect
                     Some(MessageType::Connect) => {
                         match parse_connect_message(&buffer[..size]) {
                             Ok(_) => println!("CONNECT message parsed successfully"),
                             Err(e) => println!("Error parsing CONNECT message: {}", e),
                         }
                     }
-                    // msg_type = Publish
+                    // Publish
                     Some(MessageType::Publish) =>{
                         println!("PUBLISH message received");
                     }
-                    // msg_type = Puback
+                    // Puback
                     Some(MessageType::Puback) =>{
                         println!("PUBACK message received");
                     }
-                    // msg_type = Pubrec
+                    // Pubrec
                     Some(MessageType::Pubrec) =>{
                         println!("PUBREC message received");
                     }
-                    // msg_type = Pubrel
+                    // Pubrel
                     Some(MessageType::Pubrel) =>{
                         println!("PUBREL message received");
                     }
-                    // msg_type = Pubcomp
+                    // Pubcomp
                     Some(MessageType::Pubcomp) =>{
                         println!("PUBCOMP message received");
                     }
-                    // msg_type = Subscribe
+                    // Subscribe
                     Some(MessageType::Subscribe) =>{
                         println!("SUBSCRIBE message received");
                     }
-                    // msg_type = Unsubscribe
+                    // Unsubscribe
                     Some(MessageType::Unsubscribe) =>{
                         println!("Unsubscribe message received");
                     }
-                    // msg_type = Pingreq
+                    // Pingreq
                     Some(MessageType::Pingreq) =>{
                         println!("PINGREQ message received");
                     }
-                    // msg_type = Disconnect
+                    // Disconnect
                     Some(MessageType::Disconnect) => {
                         println!("DISCONNECT message received");
                         return;
                     }
-                    // msg_type = Invalid or unsupported
+                    // Invalid or unsupported
                     _ => {
                         println!("Invalid or unsupported message type");
                     }
