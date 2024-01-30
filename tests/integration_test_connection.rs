@@ -9,32 +9,31 @@ use crate::common::test_client::TestClient;
 
 #[test]
 fn connect_message_test() {
-    // Starting broker in a separate thread
+    // Starting broker
     start_test_broker();
     thread::sleep(Duration::from_secs(1));
 
     // Connecting TestClient to the broker
     let mut client = TestClient::connect("127.0.0.1:6942").expect("Failed to connect to the broker");
 
-    // Create a Connect message
+    // Creates a Connect message
     let connect_msg = construct_connect_message();
 
-    // Send the Connect message to the broker
+    // Sends the Connect message to the broker
     client.send_message(&connect_msg).expect("Failed to send Connect message");
 
-    // Read the response from the broker, which should be a Connack message
+    // Reads the response from the broker (expects: Connack message)
     let response = client.read_response().expect("Failed to read from the broker");
 
-    // Validate the response (This should be a valid MQTT Connack packet)
+    // Validates the response
     assert_eq!(response, construct_connack_message());
 
-    // Close the connection
+    // Closes the connection
     client.close().expect("Failed to close the connection");
 }
 
 fn construct_connect_message() -> Vec<u8> {
-    // Construct a valid MQTT Connect message packet according to the MQTT protocol
-    // This is a minimal CONNECT packet for a client with ID "TestClient" and Clean Session set
+    // Minimal CONNECT packet
     vec![
         0x10, // MQTT Control Packet type for CONNECT
         0x16,   // Remaining Length (22 bytes)
@@ -49,5 +48,6 @@ fn construct_connect_message() -> Vec<u8> {
 }
 
 fn construct_connack_message() -> Vec<u8> {
-    vec![0x20, 0x02, 0x00, 0x00]  // Replace this with the expected bytes of the Connack message
+    // Minimal CONNACK packet
+    vec![0x20, 0x02, 0x00, 0x00]
 }
