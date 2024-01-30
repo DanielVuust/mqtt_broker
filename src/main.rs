@@ -25,7 +25,10 @@ fn handle_client(mut stream: TcpStream) {
                     // Connect
                     Some(MessageType::Connect) => {
                         match parse_connect_message(&buffer[..size]) {
-                            Ok(_) => println!("CONNECT message parsed successfully"),
+                            Ok(_) => {
+                                println!("CONNECT message received");
+                                send_answer(&mut stream, MessageType::Connack);
+                            },
                             Err(e) => println!("Error parsing CONNECT message: {}", e),
                         }
                     }
@@ -111,6 +114,13 @@ fn parse_connect_message(buffer: &[u8]) -> Result<(), String> {
 
     
     Ok(())
+}
+
+// Returns an answer to the client
+fn send_answer(stream: &mut TcpStream, msg_type: MessageType) {
+    let mut buffer = [0; 1024];
+    buffer[0] = msg_type.to_u8() << 4;
+    stream.write(&buffer).unwrap();
 }
 
 fn main() -> std::io::Result<()> {
