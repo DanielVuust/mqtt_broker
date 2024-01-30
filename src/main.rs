@@ -1,7 +1,8 @@
 mod message_type;
 use message_type::MessageType;
-
 use std::net::{TcpListener, TcpStream};
+
+#[allow(unused_imports)]
 use std::io::{Read, Write};
 
 // Handles client connection
@@ -68,6 +69,7 @@ fn handle_client(mut stream: TcpStream) {
                     // Invalid or unsupported
                     _ => {
                         println!("Invalid or unsupported message type");
+                        return;
                     }
                 }
                 true
@@ -106,6 +108,8 @@ fn parse_connect_message(buffer: &[u8]) -> Result<(), String> {
     if protocol_name != b"MQTT" {
         return Err("Invalid protocol name".to_string());
     }
+
+    
     Ok(())
 }
 
