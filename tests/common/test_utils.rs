@@ -1,11 +1,13 @@
 use std::thread;
-use std::time::Duration;
+use std::sync::Once;
+use mqtt_broker::mqtt::broker;
+
+static INIT: Once = Once::new();
 
 pub fn start_test_broker() {
-    thread::spawn(|| {
-        mqtt_broker::start_broker().unwrap();
+    INIT.call_once(|| {
+        thread::spawn(|| {
+            broker::start_broker().expect("Broker failed to start");
+        });
     });
-
-    // Wait for the broker to start
-    // thread::sleep(Duration::from_secs(1));
 }

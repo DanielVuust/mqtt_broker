@@ -6,14 +6,14 @@ pub struct TestClient {
     pub stream: TcpStream,
 }
 
-impl TestClient{
-    pub fn connect(addr: &str) -> TestClient {
-        let stream = TcpStream::connect(addr).unwrap();
-        stream.set_read_timeout(Some(Duration::from_millis(500))).unwrap();
-        stream.set_write_timeout(Some(Duration::from_millis(500))).unwrap();
-        Ok(Self{stream})
+impl TestClient {
+    pub fn connect(addr: &str) -> std::io::Result<TestClient> {
+        let stream = TcpStream::connect(addr)?;
+        stream.set_read_timeout(Some(Duration::from_millis(500)))?;
+        stream.set_write_timeout(Some(Duration::from_millis(500)))?;
+        Ok(Self { stream })
     }
-    
+
     // Sends a message to the MQTT broker
     pub fn send_message(&mut self, message: &[u8]) -> std::io::Result<()> {
         self.stream.write_all(message)?;
@@ -28,7 +28,7 @@ impl TestClient{
         Ok(buffer)
     }
 
-        // Close the connection
+    // Close the connection
     pub fn close(&mut self) -> std::io::Result<()> {
         self.stream.shutdown(std::net::Shutdown::Both)
     }

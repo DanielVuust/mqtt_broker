@@ -1,42 +1,53 @@
-mod common;
-use common::test_client::TestClient;
-
-use std::thread;
 use std::time::Duration;
+use std::thread;
 
-fn
+mod common;
+use crate::common::test_utils::start_test_broker;
+use crate::common::test_client::TestClient;
 
-mod tests {
-    use super::*;
-    use std::thread;
+// Use this command: cargo test --test integration_test_connection
 
-    // Helper function to start the broker for testing
-    fn start_test_broker() {
-        thread::spawn(|| {
-            main().unwrap(); // Replace this with the actual function to start your broker
-        });
-    }
+#[test]
+fn connect_message_test() {
+    // Starting broker in a separate thread
+    start_test_broker();
+    thread::sleep(Duration::from_secs(1));
 
-    #[test]
-    fn test_mqtt_connect() {
-        start_test_broker(); // Start the broker in a separate thread
+    // Connecting TestClient to the broker
+    let mut client = TestClient::connect("127.0.0.1:6942").expect("Failed to connect to the broker");
 
-        // Give some time for the broker to start up
-        thread::sleep(Duration::from_secs(1));
+    // Create a Connect message
+    let connect_msg = construct_connect_message();
 
-        // Connect to the broker
-        let mut client = TestClient::connect("127.0.0.1:6942").unwrap();
+    // Send the Connect message to the broker
+    client.send_message(&connect_msg).expect("Failed to send Connect message");
 
-        // Send a valid Connect message
-        let connect_msg = [/* bytes representing a valid Connect message */];
-        client.send_message(&connect_msg).unwrap();
+    // Read the response from the broker, which should be a Connack message
+    let response = client.read_response().expect("Failed to read from the broker");
 
-        // Read the response from the broker
-        let response = client.read_response().unwrap();
+    // Validate the response (This should be a valid MQTT Connack packet)
+    assert_eq!(response, construct_connack_message());
 
-        // Assert that the response is a Connack message
-        assert_eq!(response, [/* expected Connack message bytes */]);
+    // Close the connection
+    client.close().expect("Failed to close the connection");
+}
 
-        client.close().unwrap();
-    }
+fn construct_connect_message() -> Vec<u8> {
+    // Construct a valid MQTT Connect message packet according to the MQTT protocol
+    // This is a minimal CONNECT packet for a client with ID "TestClient" and Clean Session set
+    vec![
+        0x10, // MQTT Control Packet type for CONNECT
+        0x16,   // Remaining Length (22 bytes)
+        0x00, 0x04, // Protocol Name Length
+        0x4D, 0x51, 0x54, 0x54, // Protocol Name "MQTT"
+        0x04, // Protocol Level (0x04 for MQTT 3.1.1)
+        0x02, // Connect Flags (Clean Session)
+        0x00, 0x3C, // Keep Alive (60 seconds)
+        0x00, 0x0A, // Client Identifier Length (10 bytes for "TestClient")
+        0x54, 0x65, 0x73, 0x74, 0x43, 0x6C, 0x69, 0x65, 0x6E, 0x74, // Client Identifier "TestClient"
+    ]
+}
+
+fn construct_connack_message() -> Vec<u8> {
+    vec![0x20, 0x02, 0x00, 0x00]  // Replace this with the expected bytes of the Connack message
 }
