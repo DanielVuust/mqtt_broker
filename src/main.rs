@@ -118,9 +118,9 @@ fn parse_connect_message(buffer: &[u8]) -> Result<(), String> {
 
 // Returns an answer to the client
 fn send_answer(stream: &mut TcpStream, msg_type: MessageType) {
-    let mut buffer = [0; 1024];
-    buffer[0] = msg_type.to_u8() << 4;
-    stream.write(&buffer).unwrap();
+    let mut connack_buf = [32, 2, 0, 0];
+    connack_buf[0] = msg_type.to_u8() << 4;
+    stream.write(&connack_buf).unwrap();
 }
 
 fn main() -> std::io::Result<()> {
