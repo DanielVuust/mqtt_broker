@@ -2,6 +2,7 @@ use std::io::Read;
 use std::net::TcpStream;
 use std::time::SystemTime;
 use crate::mqtt::message_handlers::connect_handler::handle_connect;
+use crate::mqtt::message_handlers::ping_handler::ping_server;
 use crate::mqtt::message_type::MessageType;
 use crate::mqtt::message_sender::send_answer;
 
@@ -43,7 +44,7 @@ pub fn handle_client(mut stream: TcpStream) {
                             Ok(_) => {
                                 println!("CONNECT message received");
                                 handle_connect(&buffer);
-
+                    
                                 send_answer(&mut stream, MessageType::Connack);
                             },
                             Err(e) => println!("Error parsing CONNECT message: {}", e),
@@ -80,6 +81,7 @@ pub fn handle_client(mut stream: TcpStream) {
                     // Pingreq
                     Some(MessageType::Pingreq) =>{
                         println!("PINGREQ message received");
+                        ping_server(&mut stream, MessageType::Pingreq);
                     }
                     // Disconnect
                     Some(MessageType::Disconnect) => {
