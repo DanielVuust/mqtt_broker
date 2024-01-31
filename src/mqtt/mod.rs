@@ -3,4 +3,5 @@ pub mod broker;
 pub mod client_handler;
 pub mod message_parser;
 pub mod message_sender;
+pub mod message_reader;
 pub mod utils;
