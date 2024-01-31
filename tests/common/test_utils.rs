@@ -13,7 +13,7 @@ static INIT: Once = Once::new();
 pub fn start_test_broker() {
     INIT.call_once(|| {
         thread::spawn(|| {
-            broker::start_broker().expect("Broker failed to start");
+            broker::start_broker();
         });
     });
 }

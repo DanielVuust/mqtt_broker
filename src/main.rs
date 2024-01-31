@@ -1,5 +1,6 @@
 use mqtt_broker::mqtt;
 
-fn main() -> std::io::Result<()> {
-    mqtt::broker::start_broker()
+fn main() -> () {
+    mqtt::broker::start_broker();
+    
 }
