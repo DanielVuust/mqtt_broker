@@ -29,7 +29,7 @@ pub fn handle_client(mut stream: TcpStream) {
                         match parse_connect_message(&buffer[..size]) {
                             Ok(_) => {
                                 println!("CONNECT message received");
-                                let mut current_index_in_buffer :usize = 2;
+                                let mut current_index_in_buffer :usize; // Removed value 2
                                 //Skip to connectflag. 
                                 //TODO make sure its the right position.
                                 current_index_in_buffer = 9;
@@ -70,7 +70,7 @@ pub fn handle_client(mut stream: TcpStream) {
                                     clean_session_flag = true;
                                     flag_byte -=2;
                                 }
-                                if(flag_byte >= 1){
+                                if flag_byte >= 1 {
                                     //TODO return correct status code to client :\
                                     panic!("LSb in flag byte is reserved")
                                 }
@@ -149,7 +149,7 @@ pub fn handle_client(mut stream: TcpStream) {
                                     }
                                     println!("{}", password);
     
-                                    current_index_in_buffer += password_length+2;
+                                    // current_index_in_buffer += password_length+2;
                                 } 
 
 

@@ -1,13 +1,11 @@
 
-use std::{io::Read, time::{SystemTime}};
-
-
+use std::time::SystemTime;
 
 pub fn create_client(mut clients: Vec<Client>,
     client_id: String, username: String, password: String, will_flag: bool, will_text: String, will_topic: String, will_retain_flag: bool, will_qos_flag: u8, clean_session_flag: bool, keep_alive_secounds: usize ) -> bool{
-    let mut cilent: Client = Client{
-        client_id: client_id,
-        username: username,
+        let cilent: Client = Client{
+            client_id: client_id,
+            username: username,
         password: password,
         will: will_flag,
         will_text: will_text,
@@ -24,13 +22,13 @@ pub fn create_client(mut clients: Vec<Client>,
 }
 
 pub fn get_utf_8_string(buffer: &[u8]) -> String {
-
+    
     let length: usize = buffer[0] as usize * 256 as usize + buffer[1] as usize;
-
+    
     for index in 2..length+2 {
         println!("{}", buffer[index]);
     }
-
+    
     "4res2".to_string()
 }
 
@@ -52,6 +50,7 @@ pub struct Client {
     keep_alive_secounds: usize,
     last_communication: SystemTime
 }
+
 // impl Client {
 //     fn new() -> Self{
 //         Client{
