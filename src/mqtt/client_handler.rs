@@ -92,6 +92,7 @@ pub fn handle_client(mut stream: TcpStream) {
                         return;
                     }
                 }
+                buffer = [0; 2048];
                 true
             }
         }
