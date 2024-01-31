@@ -7,7 +7,7 @@ use crate::mqtt::message_reader::create_client;
 
 // Handles client connection
 pub fn handle_client(mut stream: TcpStream) {
-    let mut buffer = [0; 1024];
+    let mut buffer = [0; 2048];
 
     // Reads data from stream until connection is closed
     while match stream.read(&mut buffer) {

@@ -15,3 +15,8 @@ pub fn validate_ip_address(ip: &str) -> bool {
 pub fn bytes_to_string(bytes: &[u8]) -> String {
     String::from_utf8(bytes.to_vec()).unwrap_or_else(|_| String::from("Invalid UTF-8"))
 }
+
+// Get length
+//pub fn get_length(buffer: &[u8], position: u8) -> usize {
+
+//}

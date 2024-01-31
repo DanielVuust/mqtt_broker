@@ -1,4 +1,6 @@
 // MQTT messagetypes
+
+#[derive(Debug)]
 pub enum MessageType {
     Connect,
     Connack,
