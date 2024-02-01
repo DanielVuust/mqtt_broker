@@ -3,7 +3,7 @@ use std::net::TcpStream;
 use std::time::SystemTime;
 use crate::mqtt::message_handlers::connect_handler::handle_connect;
 use crate::mqtt::message_handlers::ping_handler::ping_server;
-use crate::mqtt::message_handlers::subscribe_handeler::handle_subscribe;
+use crate::mqtt::message_handlers::subscribe_handler::handle_subscribe;
 use crate::mqtt::message_sender::{generate_package_type_byte, send_response};
 use crate::mqtt::message_type::MessageType;
 
