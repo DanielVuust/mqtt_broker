@@ -2,6 +2,7 @@ use std::io::Read;
 use std::net::TcpStream;
 use std::time::SystemTime;
 use crate::mqtt::message_handlers::connect_handler::handle_connect;
+use crate::mqtt::message_handlers::subscribe_handler::handle_subscribe;
 use crate::mqtt::message_type::MessageType;
 use crate::mqtt::message_sender::send_answer;
 
@@ -24,6 +25,8 @@ pub fn handle_client(mut stream: TcpStream) {
     let mut keep_alive_secounds: usize;
     let mut last_communication: SystemTime;
 
+    let mut subscribed_topics: Vec<String> = vec![];
+
     // Reads data from stream until connection is closed
     while match stream.read(&mut buffer) {
         Ok(size) => {
@@ -42,8 +45,7 @@ pub fn handle_client(mut stream: TcpStream) {
                         match parse_connect_message(&buffer[..size]) {
                             Ok(_) => {
                                 println!("CONNECT message received");
-                                handle_connect(&buffer);
-
+                                (client_id, will_topic, will_text, will_retain, will_qos, clean_session, keep_alive_secounds) = handle_connect(&buffer);
                                 send_answer(&mut stream, MessageType::Connack);
                             },
                             Err(e) => println!("Error parsing CONNECT message: {}", e),
@@ -72,6 +74,12 @@ pub fn handle_client(mut stream: TcpStream) {
                     // Subscribe
                     Some(MessageType::Subscribe) =>{
                         println!("SUBSCRIBE message received");
+                        println!("{:?}", buffer);
+                        let topic = handle_subscribe(&buffer, 5);
+                        subscribed_topics.push(topic);
+                        println!("{:?}", subscribed_topics);
+                        send_answer(&mut stream, MessageType::Suback);
+                           
                     }
                     // Unsubscribe
                     Some(MessageType::Unsubscribe) =>{
