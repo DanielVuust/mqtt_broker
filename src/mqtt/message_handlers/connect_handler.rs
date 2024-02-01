@@ -3,14 +3,13 @@ use std::io::Result;
 
 pub fn handle_connect(buffer: &[u8]) -> (String, String, String, bool,
     u8, bool, usize){
-        // (client_id: String, will_topic: String, will_text: String, will_retain: bool,
-        //     will_qos: u8, clean_session: bool, keep_alive_secounds: u16, last_communication: SystemTime){
-    let mut client_id: String = "".to_string();    
-    let mut will_topic: String  = "".to_string();
-    let mut will_text: String  = "".to_string();
+
+    let mut client_id = String::new();
+    let mut will_topic = String::new();
+    let mut will_text = String::new();
     
-    let mut current_index_in_buffer :usize; // Removed value 2
-    //Skip to connectflag. 
+    let mut current_index_in_buffer :usize;
+
     //TODO make sure its the right position.
     current_index_in_buffer = 9;
 
