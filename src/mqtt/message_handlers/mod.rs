@@ -1,3 +1,3 @@
 pub mod connect_handler;
 pub mod ping_handler;
-pub mod subscribe_handeler;
+pub mod subscribe_handler;
