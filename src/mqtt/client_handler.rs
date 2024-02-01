@@ -3,9 +3,9 @@ use std::net::TcpStream;
 use std::time::SystemTime;
 use crate::mqtt::message_handlers::connect_handler::handle_connect;
 use crate::mqtt::message_handlers::ping_handler::ping_server;
-use crate::mqtt::message_handlers::subscribe_handler::handle_subscribe;
+use crate::mqtt::message_handlers::subscribe_handeler::handle_subscribe;
+use crate::mqtt::message_sender::{generate_package_type_byte, send_response};
 use crate::mqtt::message_type::MessageType;
-use crate::mqtt::message_sender::send_answer;
 
 use super::message_protocol_parser::parse_connect_message;
 
@@ -47,7 +47,11 @@ pub fn handle_client(mut stream: TcpStream) {
                             Ok(_) => {
                                 println!("CONNECT message received");
                                 (client_id, will_topic, will_text, will_retain, will_qos, clean_session, keep_alive_secounds) = handle_connect(&buffer);
-                                send_answer(&mut stream, MessageType::Connack);
+                                
+                                let mut response: [u8; 4] = [0; 4];
+                                response[0] = generate_package_type_byte(MessageType::Connack);
+                                response[1] = 2;
+                                send_response(&mut stream, &response);
                             },
                             Err(e) => println!("Error parsing CONNECT message: {}", e),
                         }
@@ -79,8 +83,11 @@ pub fn handle_client(mut stream: TcpStream) {
                         let topic = handle_subscribe(&buffer, 5);
                         subscribed_topics.push(topic);
                         println!("{:?}", subscribed_topics);
-                        send_answer(&mut stream, MessageType::Suback);
-                           
+
+                        let mut response: [u8; 4] = [0; 4];
+                        response[0] = generate_package_type_byte(MessageType::Suback);
+                        response[1] = 2;
+                        send_response(&mut stream, &response);
                     }
                     // Unsubscribe
                     Some(MessageType::Unsubscribe) =>{
