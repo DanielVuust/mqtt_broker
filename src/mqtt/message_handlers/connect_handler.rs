@@ -77,7 +77,6 @@ pub fn handle_connect(buffer: &[u8]) -> (String, String, String, bool,
         client_id.push( buffer[index] as char);
     }
     println!("{}", client_id);
-    println!("{}", current_index_in_buffer);
 
     current_index_in_buffer += client_id_length+2;
     
