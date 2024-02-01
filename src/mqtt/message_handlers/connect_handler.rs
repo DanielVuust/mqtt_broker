@@ -3,35 +3,61 @@ use std::io::Result;
 
 pub fn handle_connect(buffer: &[u8]) -> (String, String, String, bool,
     u8, bool, usize){
-    let mut client_id = String::new();    
-    let mut will_topic = String::new();
-    let mut will_text = String::new();
-    let mut will_retain_flag = false;
-    let mut will_qos: u8 = 0;
-    let mut clean_session = false;
+        // (client_id: String, will_topic: String, will_text: String, will_retain: bool,
+        //     will_qos: u8, clean_session: bool, keep_alive_secounds: u16, last_communication: SystemTime){
+    let mut client_id: String = "".to_string();    
+    let mut will_topic: String  = "".to_string();
+    let mut will_text: String  = "".to_string();
+    
+    let mut current_index_in_buffer :usize; // Removed value 2
+    //Skip to connectflag. 
+    //TODO make sure its the right position.
+    current_index_in_buffer = 9;
 
-    // TODO make sure its the right position.
-    let mut current_index_in_buffer = 9;
-
-    let flag_byte = buffer[current_index_in_buffer];
-    let username_flag = flag_byte & 128 != 0;
-    let password_flag = flag_byte & 64 != 0;
-    will_retain_flag = flag_byte & 32 != 0;
-    will_qos = (flag_byte & 24) >> 3; // Extracting will QoS from bits 4 and 3
-    let will_flag = flag_byte & 4 != 0;
-    clean_session = flag_byte & 2 != 0;
-
-
-    if flag_byte & 1 != 0 {
+    let mut flag_byte = buffer[current_index_in_buffer];
+    let mut username_flag: bool = false;
+    let mut password_flag: bool = false;
+    let mut will_retain_flag: bool = false;
+    let mut will_qos_flag: u8 = 0;
+    let mut will_flag: bool = false;
+    let mut clean_session_flag: bool = false;
+    if flag_byte >= 128 {
+        username_flag = true;
+        flag_byte -= 128;
+    }
+    if flag_byte >= 64 {
+        password_flag = true;
+        flag_byte -= 64;
+    }
+    if flag_byte >= 32 {
+        will_retain_flag = true;
+        flag_byte -= 32
+    }
+    if flag_byte >= 16 {
+        will_qos_flag += 2;
+        flag_byte -= 16;
+    }
+    if flag_byte >= 8 {
+        will_qos_flag += 1;
+        flag_byte -= 8;
+    }
+    if flag_byte >= 4 {
+        will_flag = true;
+        flag_byte -= 4;
+    }
+    if flag_byte >= 2 {
+        clean_session_flag = true;
+        flag_byte -=2;
+    }
+    if flag_byte >= 1 {
         //TODO return correct status code to client :\
         panic!("LSb in flag byte is reserved")
     }
-
     println!("username_flag {:?}", username_flag);
     println!("password_flag {:?}", password_flag);
-    println!("will_qos_flag {:?}", will_qos);
+    println!("will_qos_flag {:?}", will_qos_flag);
     println!("will_flag {:?}", will_flag);
-    println!("clean_session_flag {:?}", clean_session);
+    println!("clean_session_flag {:?}", clean_session_flag);
 
     //Keep alive MSB; TODO change to something else.
     current_index_in_buffer += 1;
