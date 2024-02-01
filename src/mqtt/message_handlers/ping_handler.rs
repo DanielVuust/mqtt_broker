@@ -1,11 +1,18 @@
-use std::{io::Write, net::TcpStream};
+use std::net::TcpStream;
 
-use crate::mqtt::message_type::MessageType;
+use crate::mqtt::{message_sender::{generate_package_type_byte, send_response}, message_type::MessageType};
 
-pub fn ping_server(stream: &mut TcpStream, msq_type: MessageType) {
-    println!("Trying to send ping responds");
-    //Change to pingresp
-    let packet: &[u8] = &[0xd0,0];
-    stream.write(packet);
-    println!("Ping responds has been successfully send to client");
+//This function has the responsibility for sending a PINGRESP to the client
+pub fn ping_resp(stream: &mut TcpStream, message_type: MessageType) {
+    println!("Trying to send PINGRESP");
+
+    //Create array of two bites.
+    //PingResp only uses two bytes
+    let mut response: [u8; 2] = [0; 2];
+    response[0] = generate_package_type_byte(message_type);
+    response[1] = 0;
+    
+    send_response(stream, &response);
+
+    println!("PINGRESP has been successfully send to client");
 }
