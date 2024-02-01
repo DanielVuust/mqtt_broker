@@ -16,7 +16,7 @@ pub fn bytes_to_string(bytes: &[u8]) -> String {
     String::from_utf8(bytes.to_vec()).unwrap_or_else(|_| String::from("Invalid UTF-8"))
 }
 
-// Get length
+// Get length (used for packet identifier)
 pub fn get_length(buffer: &[u8], position: u8) -> usize {
 
     // If the first bit is 0, the length is 1 byte long

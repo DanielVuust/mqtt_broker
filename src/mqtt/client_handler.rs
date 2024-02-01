@@ -1,105 +1,110 @@
-use std::io::Read;
-use std::net::TcpStream;
-use std::time::SystemTime;
+use std::io::{self, Read};
+use std::net::{Shutdown, TcpStream};
+use std::time::Duration;
 use crate::mqtt::message_handlers::connect_handler::handle_connect;
 use crate::mqtt::message_type::MessageType;
 use crate::mqtt::message_sender::send_answer;
-
-use super::message_protocol_parser::parse_connect_message;
-
-
-
-
+use crate::mqtt::message_protocol_parser::parse_connect_message;
+use crate::mqtt::utils::get_length;
 
 // Handles client connection
-pub fn handle_client(mut stream: TcpStream) {
-    let mut buffer = [0; 2048];
-    let mut client_id: String = "".to_string();    
-    let mut will_topic: String  = "".to_string();
-    let mut will_text: String  = "".to_string();
-    let mut will_retain: bool;
-    //Chmut ange to two;bits 
-    let mut will_qos: u8;
-    let mut clean_session: bool;
-    let mut keep_alive_secounds: usize;
-    let mut last_communication: SystemTime;
+pub fn handle_client(mut stream: TcpStream) -> io::Result<()>{
+    // Sets read timeout to 30 seconds - if no data is received within this time, the connection is closed
+    stream.set_read_timeout(Some(Duration::from_secs(30))).expect("Failed to set read timeout");
 
-    // Reads data from stream until connection is closed
-    while match stream.read(&mut buffer) {
-        Ok(size) => {
-            if size == 0 {
-                // No data received, closing connection
-                false
-            } else {
-                // Uses bit-shift operation to move first 4 bits to the right of the byte and converts it to u8 
-                // Example: '0001 1010' >> 4 = '0000 0001' = 1u8
-                let msg_type = buffer[0] >> 4;
+    loop {
+        // Reads the fixed header
+        let mut fixed_header = [0; 5];
+        let mut size = match stream.read(&mut fixed_header) {
+            Ok(size) if size == 0 => break,  // No data received, closing connection
+            Ok(size) => size,
+            Err(e) => return Err(e),
+        };
 
-                last_communication = SystemTime::now();
-                match MessageType::from_u8(msg_type) {
-                    // Connect
-                    Some(MessageType::Connect) => {
-                        match parse_connect_message(&buffer[..size]) {
-                            Ok(_) => {
-                                println!("CONNECT message received");
-                                handle_connect(&buffer);
+        // Gets remaining length of the message
+        let remaining_length = get_length(&fixed_header, 1) as usize;
+        let total_length = remaining_length + size;
 
-                                send_answer(&mut stream, MessageType::Connack);
-                            },
-                            Err(e) => println!("Error parsing CONNECT message: {}", e),
-                        }
-                    }
-                    // Publish
-                    Some(MessageType::Publish) =>{
-                        println!("PUBLISH message received");
-                    }
-                    // Puback
-                    Some(MessageType::Puback) =>{
-                        println!("PUBACK message received");
-                    }
-                    // Pubrec
-                    Some(MessageType::Pubrec) =>{
-                        println!("PUBREC message received");
-                    }
-                    // Pubrel
-                    Some(MessageType::Pubrel) =>{
-                        println!("PUBREL message received");
-                    }
-                    // Pubcomp
-                    Some(MessageType::Pubcomp) =>{
-                        println!("PUBCOMP message received");
-                    }
-                    // Subscribe
-                    Some(MessageType::Subscribe) =>{
-                        println!("SUBSCRIBE message received");
-                    }
-                    // Unsubscribe
-                    Some(MessageType::Unsubscribe) =>{
-                        println!("Unsubscribe message received");
-                    }
-                    // Pingreq
-                    Some(MessageType::Pingreq) =>{
-                        println!("PINGREQ message received");
-                    }
-                    // Disconnect
-                    Some(MessageType::Disconnect) => {
-                        println!("DISCONNECT message received");
-                        return;
-                    }
-                    // Invalid or unsupported
-                    _ => {
-                        println!("Invalid or unsupported message type");
-                        return;
-                    }
-                }
-                buffer = [0; 2048];
-                true
+        // Creates a buffer with the size of the message
+        let mut buffer = vec![0; total_length];
+        buffer[..size].copy_from_slice(&fixed_header[..size]);
+
+        let mut read_attempts = 0;
+        let max_read_attempts = 10;
+
+        // Reads the rest of the packet
+        while size < total_length {
+            if read_attempts >= max_read_attempts {
+                println!("Maximum read attempts reached, incomplete message received");
+                break;
             }
+
+            match stream.read(&mut buffer[size..]) {
+                Ok(0) => break, // No data received, closing connection
+                Ok(n) => size += n,
+                Err(e) => return Err(e),
+            }
+
+            read_attempts += 1; // Increments read attempts - stops reading if max_read_attempts is reached
         }
-        Err(_) => {
-            println!("An error occurred, terminating connection with {}", stream.peer_addr().unwrap());
-            stream.shutdown(std::net::Shutdown::Both).unwrap();
-            false
+
+        println!("Received message: {:?}", buffer.len());
+
+        // Processes the message
+        let msg_type = buffer[0] >> 4; // Gets the message type from the first 4 bits of the first byte
+        handle_message(MessageType::from_u8(msg_type).unwrap(), &buffer, &mut stream);
+    }
+
+    stream.shutdown(Shutdown::Both)?;
+    Ok(())
+}
+
+
+
+
+
+// Handles message
+fn handle_message(msg_type: MessageType, buffer: &[u8], stream: &mut TcpStream) {
+    match msg_type {
+        MessageType::Connect => {
+            match parse_connect_message(&buffer) {
+                Ok(_) => {
+                    println!("CONNECT message received");
+                    handle_connect(&buffer);
+                    send_answer(stream, MessageType::Connack);
+                },
+                Err(e) => println!("Error parsing CONNECT message: {}", e),
+            }
+        },
+        MessageType::Publish => {
+            println!("PUBLISH message received");
+        },
+        MessageType::Puback => {
+            println!("PUBACK message received");
+        },
+        MessageType::Pubrec => {
+            println!("PUBREC message received");
+        },
+        MessageType::Pubrel => {
+            println!("PUBREL message received");
+        },
+        MessageType::Pubcomp => {
+            println!("PUBCOMP message received");
+        },
+        MessageType::Subscribe => {
+            println!("SUBSCRIBE message received");
+        },
+        MessageType::Unsubscribe => {
+            println!("UNSUBSCRIBE message received");
+        },
+        MessageType::Pingreq => {
+            println!("PINGREQ message received");
+        },
+        MessageType::Disconnect => {
+            println!("DISCONNECT message received");
+        },
+        _ => {
+            println!("Invalid or unsupported message type");
         }
-    } {}
+    }
 }
