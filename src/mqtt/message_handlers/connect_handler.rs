@@ -1,11 +1,22 @@
 use std::time::SystemTime;
 
+use crate::mqtt::utils::get_length;
+
 
 
 pub fn handle_connect(buffer: &[u8]) -> (String, String, String, bool,
     u8, bool, usize){
-        // (client_id: String, will_topic: String, will_text: String, will_retain: bool,
-        //     will_qos: u8, clean_session: bool, keep_alive_secounds: u16, last_communication: SystemTime){
+
+
+    //Chceks protocol name;
+    let protocol_name_len = get_length(&buffer, 3);
+    let protocol_name = &buffer[4..4 + protocol_name_len];
+    if protocol_name != b"MQTT" {
+        return panic!("Invalid protocol name");
+    }
+
+
+
     let mut client_id: String = "".to_string();    
     let mut will_topic: String  = "".to_string();
     let mut will_text: String  = "".to_string();
