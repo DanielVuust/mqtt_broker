@@ -6,6 +6,7 @@ use std::time::SystemTime;
 use crate::mqtt::broker_state::Subscription;
 use crate::mqtt::message_handlers::connect_handler::handle_connect;
 use crate::mqtt::message_handlers::ping_handler::ping_resp;
+use crate::mqtt::message_handlers::publish_handler::handle_publish;
 use crate::mqtt::message_handlers::subscribe_handler::handle_subscribe;
 use crate::mqtt::message_sender::{ send_response};
 use crate::mqtt::message_type::MessageType;
@@ -59,7 +60,7 @@ pub fn handle_client(mut stream: TcpStream, arc_broker_state: Arc<Mutex<BrokerSt
                     // Publish
                     Some(MessageType::Publish) =>{
                         println!("PUBLISH message received");
-                        
+                        handle_publish(&mut stream, &buffer, thread_id, current_broker_state)
                     }
                     // Puback
                     Some(MessageType::Puback) =>{

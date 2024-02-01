@@ -12,12 +12,12 @@ pub struct Client {
 }
 #[derive(Debug)]
 pub struct Subscription {
-    topic_title: String,
-    messages: Vec<SubscriptionMessage>,
+    pub topic_title: String,
+    pub messages: Vec<SubscriptionMessage>,
 }
 #[derive(Debug)]
 pub struct SubscriptionMessage {
-    message: String,
+    pub message: String,
 }
 
 impl BrokerState {
@@ -49,9 +49,9 @@ impl Subscription {
 }
 
 impl SubscriptionMessage {
-    pub fn new() -> Self {
+    pub fn new(message: String) -> Self {
         SubscriptionMessage {
-            message: String::new(),
+            message: message,
         }
     }
 }
