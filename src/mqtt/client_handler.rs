@@ -5,6 +5,7 @@ use crate::mqtt::message_handlers::connect_handler::handle_connect;
 use crate::mqtt::message_type::MessageType;
 use crate::mqtt::message_sender::send_answer;
 use crate::mqtt::message_protocol_parser::parse_connect_message;
+use crate::mqtt::utils::get_length;
 
 // Handles client connection
 pub fn handle_client(mut stream: TcpStream) -> io::Result<()>{
@@ -13,13 +14,41 @@ pub fn handle_client(mut stream: TcpStream) -> io::Result<()>{
     stream.set_read_timeout(Some(Duration::from_secs(30))).expect("Failed to set read timeout");
 
     loop {
-        let mut buffer = [0; 2042];
-        
-        match stream.read(&mut buffer) {
+        // Reads the fixed header
+        let mut fixed_header = [0; 5];
+        let mut size = match stream.read(&mut fixed_header) {
             Ok(size) if size == 0 => break,  // No data received, closing connection
             Ok(size) => size,
             Err(e) => return Err(e),
         };
+
+        // Gets remaining length of the message
+        let remaining_length = get_length(&fixed_header, 1) as usize;
+        let total_length = remaining_length + size;
+
+        // Creates a buffer with the size of the message
+        let mut buffer = vec![0; total_length];
+        buffer[..size].copy_from_slice(&fixed_header[..size]);
+
+        let mut read_attempts = 0;
+        let max_read_attempts = 10;
+
+        // Reads the rest of the packet
+        while size < total_length {
+            if read_attempts >= max_read_attempts {
+                println!("Maximum read attempts reached, incomplete message received");
+                break;
+            }
+
+            match stream.read(&mut buffer[size..]) {
+                Ok(0) => break, // No data received, closing connection
+                Ok(n) => size += n,
+                Err(e) => return Err(e),
+            }
+
+            read_attempts += 1; // Increments read attempts - stops reading if max_read_attempts is reached
+        }
+
 
         // Processes the message
         let msg_type = buffer[0] >> 4; // Gets the message type from the first 4 bits of the first byte

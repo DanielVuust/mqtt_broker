@@ -1,6 +1,3 @@
-use std::time::SystemTime;
-use std::io::Result;
-
 pub fn handle_connect(buffer: &[u8]) -> (String, String, String, bool,
     u8, bool, usize){
 
@@ -11,7 +8,7 @@ pub fn handle_connect(buffer: &[u8]) -> (String, String, String, bool,
     let mut current_index_in_buffer :usize;
 
     //TODO make sure its the right position.
-    current_index_in_buffer = 9;
+    current_index_in_buffer = 0;
 
     let mut flag_byte = buffer[current_index_in_buffer];
     let mut username_flag: bool = false;
