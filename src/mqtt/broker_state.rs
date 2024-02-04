@@ -7,6 +7,7 @@ pub struct BrokerState {
 #[derive(Debug)]
 pub struct Client {
     pub thread_id: f64,
+    pub cancellation_requested: bool,
     pub client_id: String,
     pub subscriptions: Vec<Subscription>
 }
@@ -15,9 +16,10 @@ pub struct Subscription {
     pub topic_title: String,
     pub messages: Vec<SubscriptionMessage>,
 }
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SubscriptionMessage {
     pub message: String,
+    pub message_sent: bool,
 }
 
 impl BrokerState {
@@ -33,6 +35,7 @@ impl Client {
     pub fn new(thread_id: f64) -> Self {
         Client {
             thread_id: thread_id,
+            cancellation_requested: false,
             client_id: String::new(),
             subscriptions: Vec::new(),
         }
@@ -52,6 +55,7 @@ impl SubscriptionMessage {
     pub fn new(message: String) -> Self {
         SubscriptionMessage {
             message: message,
+            message_sent: false
         }
     }
 }

@@ -15,13 +15,13 @@ pub fn handle_subscribe(stream: &mut TcpStream, buffer: &[u8], thread_id: f64, b
     add_topic_to_broker_state(topic, thread_id, broker_state);
 
     //Send response 
-    let mut response: [u8; 6] = [0; 6];
+    let mut response: [u8; 5] = [0; 5];
     response[0] = MessageType::Suback.to_u8();
     response[1] = 0;
     response[2] = buffer[2];
     response[3] = buffer[3];
     response[4] = 0x00;
-
+    println!("{:?}", response);
     send_response(stream, &response);
 }
 

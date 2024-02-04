@@ -23,12 +23,14 @@ pub fn handle_publish(stream: &mut TcpStream, buffer: &[u8], thread_id: f64, mut
         }
     }
 
-    send_puback_response(stream);
+    // send_puback_response(stream);
 }
 
 
 fn read_publish_bytes(buffer: &[u8]) -> (String, String){
     let mut reader_index = 1;
+
+    println!("{:?}", buffer);
     
     let package_length: usize;
     (package_length, reader_index) = read_package_length(buffer, reader_index);

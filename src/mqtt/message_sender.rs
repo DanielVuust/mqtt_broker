@@ -4,5 +4,6 @@ use crate::mqtt::message_type::MessageType;
 
 // Returns an answer to the client
 pub fn send_response(stream: &mut TcpStream, buffer: &[u8], ) {
-    stream.write(&buffer).unwrap();
+    println!("Sending message: {:?}", buffer);
+    stream.write(&buffer);
 }
