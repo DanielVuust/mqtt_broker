@@ -1,3 +1,4 @@
+use std::alloc::System;
 use std::borrow::Borrow;
 use std::io::Read;
 use std::net::TcpStream;
@@ -12,6 +13,8 @@ use crate::mqtt::message_handlers::subscribe_handler::handle_subscribe;
 use crate::mqtt::message_sender::{ send_response};
 use crate::mqtt::message_type::MessageType;
 use crate::mqtt::utils::get_length;
+use time::{OffsetDateTime, PrimitiveDateTime};
+
 
 use super::broker_state::{BrokerState, SubscriptionMessage};
 
@@ -48,21 +51,21 @@ pub async fn handle_client(mut stream: TcpStream, arc_broker_state: Arc<Mutex<Br
         
         Ok(size) => {
             let mut current_broker_state = arc_broker_state.lock().unwrap();
-            
+            let currect_client = (*current_broker_state).clients.iter_mut().enumerate().find(| x: &(usize, &mut crate::mqtt::broker_state::Client) | &x.1.thread_id == &thread_id ).unwrap().1;
+
             if size == 0 {
                 // No data received, closing connection
                 false
             } else {
-
-                last_communication = SystemTime::now();
+                let now = OffsetDateTime::now_utc();
+                currect_client.last_connection = PrimitiveDateTime::new(now.date(), now.time());
                 match MessageType::from_u8(buffer[0]) {
                     // Connect
                     Some(MessageType::Connect) => {
                         println!("CONNECT message received");
                         (client_id, will_topic, will_text, will_retain, will_qos, clean_session, keep_alive_secounds) = handle_connect(&buffer);
                         
-                        let t = (*current_broker_state).clients.iter_mut().enumerate().find(| x: &(usize, &mut crate::mqtt::broker_state::Client) | &x.1.thread_id == &thread_id );
-                        t.unwrap().1.client_id = client_id;
+                        currect_client.client_id = client_id;
 
                         let mut response: [u8; 4] = [0; 4];
                         response[0] = MessageType::Connack.to_u8();
@@ -148,6 +151,16 @@ async fn handle_second_stream( stream: &mut TcpStream, arc_broker_state: Arc<Mut
                 message.message_sent = true;
             }
         }
+        let now = OffsetDateTime::now_utc();
+        println!("{:?}", client.last_connection);
+        //TODO check keep alive from client
+        if client.last_connection + time::Duration::seconds((60 as f64 * 1.5) as i64) < PrimitiveDateTime::new(now.date(), now.time()) {
+            println!("Killing connection due to no ping from client");
+            client.cancellation_requested = true;
+            return;
+        }
+
+
     }
 }
 
