@@ -20,7 +20,7 @@ pub fn start_broker() -> () {
             let thread_id: f64;
             (thread_id) = create_new_client(&broker_state);
             let _ = runtime.block_on(runtime.spawn(async move {
-                handle_client(stream.unwrap(), broker_state, thread_id).await;
+                handle_client(stream.unwrap(), broker_state, thread_id);
             }));    
         });
     }

@@ -15,7 +15,7 @@ use super::broker_state::{BrokerState, SubscriptionMessage};
 
 
 // Handles client connection
-pub async fn handle_client(mut stream: TcpStream, arc_broker_state: Arc<Mutex<BrokerState>>, thread_id: f64) {
+pub fn handle_client(mut stream: TcpStream, arc_broker_state: Arc<Mutex<BrokerState>>, thread_id: f64) {
     println!("{}", thread_id);
     let mut buffer = [0; 2048];
     let mut client_id: String = "".to_string();    
@@ -32,12 +32,9 @@ pub async fn handle_client(mut stream: TcpStream, arc_broker_state: Arc<Mutex<Br
     let callback_closure = |result: i32| {
 
     };  
-    let runtime = tokio::runtime::Runtime::new().unwrap(); 
     let arc2 = Arc::clone(&arc_broker_state);
     thread::spawn(move || {
-        let _ = runtime.block_on(runtime.spawn(async move {
             handle_second_stream(&mut second_stream, arc2, thread_id, callback_closure);
-        }));
     });
     
     println!("continue");
