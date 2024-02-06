@@ -1,43 +1,31 @@
 use std::{net::TcpStream, ops::Sub, sync::MutexGuard};
 
-use crate::mqtt::{broker, broker_state::{BrokerState, SubscriptionMessage}, message_handlers::message_reader::{read_package_length, read_uft_8_string_with_end_index}, message_sender::send_response, message_type::MessageType, utils::get_message_length};
-
+use crate::mqtt::{broker_state::{BrokerState, SubscriptionMessage}, message_handlers::message_reader::{read_package_length, read_uft_8_string_with_end_index}, message_sender::send_response, message_type::MessageType, utils::get_message_length};
+use crate::mqtt::broker_state::MessageState;
 use super::message_reader::read_uft_8_string_with_length_bytes;
+use crate::mqtt::message_sender::{send_response_packet, transform_package_identifier_to_u8, get_packet_identifier_to_u16};
 
 
 pub fn handle_publish(stream: &mut TcpStream, buffer: &[u8], thread_id: f64, mut broker_state: MutexGuard<'_, BrokerState>){
-
-    println!("Guard publish: {:?}", buffer);
-
-    let message_length = get_length(&buffer, 2);
-
-    println!("Message length: {:?}", message_length);
-
-    let ( topic, message, qos) = read_publish_bytes(buffer);
-
-    //Loops though all connected clients and checks if they have any subscriptions that matches the topic,
-    //if so the message will be push to the subscription message list 
-
-    for i in (*broker_state).clients.iter_mut().enumerate(){
-        for j in i.1.subscriptions.iter_mut().enumerate() {
-            if j.1.topic_title == topic{
-                j.1.messages.push(SubscriptionMessage::new(
-                    message.to_string(), 
-                    qos,
-                    false,
-                    false
-                ));
+    let ( topic, message, qos, packet_identifier) = read_publish_bytes(buffer);
+    
+    match qos{
+            1 => {
+                send_response_packet(stream, MessageType::Puback, packet_identifier);
+                process_publish(&mut broker_state, &topic, &message, qos, MessageState::Acknowledged, packet_identifier);
+            },
+            2 => {
+                send_response_packet(stream, MessageType::Pubrec, packet_identifier);
+                process_publish(&mut broker_state, &topic, &message, qos, MessageState::Received, packet_identifier);
+            },
+            _ => {
+                process_publish(&mut broker_state, &topic, &message, qos, MessageState::None, packet_identifier);
             }
         }
-    }
-
-    if qos == 1 {
-        send_puback_response(stream, buffer[message_length + 4],  buffer[message_length + 5]);
-    }
 }
 
 
-fn read_publish_bytes(buffer: &[u8]) -> (String, String, u8){
+fn read_publish_bytes(buffer: &[u8]) -> (String, String, u8, u16){
     let mut reader_index = 0;
 
     println!("{:?}", buffer);
@@ -54,34 +42,35 @@ fn read_publish_bytes(buffer: &[u8]) -> (String, String, u8){
     // Reads the topics from buffer
     (topic, reader_index) = read_uft_8_string_with_length_bytes(buffer, reader_index);
     
-    // If qos is greater than 0, the package identifier will be read from the buffer
+    let mut packet_identifier: u16 = 0;
+
     if qos > 0 {
-        reader_index += 2;
+        packet_identifier = get_packet_identifier_to_u16(buffer, reader_index);
+
+        reader_index += 2; // Skips the packet identifier
     }
 
     let message: String;
     // Reads the message from buffer
     (message, reader_index) = read_uft_8_string_with_end_index(buffer, reader_index, package_length-1);
 
-    (topic, message, qos)
+    (topic, message, qos, packet_identifier)
 }
 
-fn send_puback_response(stream: &mut TcpStream, msb: u8, lsb: u8){
-
-    println!("Sending puback response");
-    println!("MSB: {:?}", msb);
-    println!("LSB: {:?}", lsb);
-
-    let mut response: [u8; 4] = [0; 4];
-    response[0] = MessageType::Puback.to_u8();
-    response[1] = 0x02; // Remaining length
-    response[2] = msb; // MSB
-    response[3] = lsb; // LSB
-    
-    send_response(stream, &response);
-}
-
-// Get's length of message length from index
-fn get_length(buffer: &[u8], index: usize) -> usize {
-    buffer[index] as usize * 256 as usize + buffer[index + 1] as usize
+// Function to process the publish message
+fn process_publish(broker_state: &mut MutexGuard<'_, BrokerState>, topic: &String, message: &String, qos: u8, message_state: MessageState, packet_identifier: u16) {
+    //Loops though all connected clients and checks if they have any subscriptions that matches the topic,
+    //if so the message will be push to the subscription message list 
+    for client in broker_state.clients.iter_mut() {
+        for subscription in client.subscriptions.iter_mut() {
+            if subscription.topic_title == *topic {
+                subscription.messages.push(SubscriptionMessage::new(
+                    message.clone(),
+                    qos,
+                    message_state.clone(),
+                    packet_identifier
+                ));
+            }
+        }
+    }
 }
