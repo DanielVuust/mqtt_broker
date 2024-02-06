@@ -9,9 +9,16 @@ pub struct BrokerState {
 pub struct Client {
     pub thread_id: f64,
     pub cancellation_requested: bool,
-    pub client_id: String,
     pub subscriptions: Vec<Subscription>,
-    pub last_connection: PrimitiveDateTime
+    pub last_connection: PrimitiveDateTime,
+    
+    pub client_id: String,
+    pub will_topic: String,
+    pub will_text: String,
+    pub will_retain: bool,
+    pub will_qos: u8,
+    pub clean_session: bool,
+    pub keep_alive_seconds: usize,
 }
 #[derive(Debug)]
 pub struct Subscription {
@@ -42,6 +49,7 @@ impl Client {
             client_id: String::new(),
             subscriptions: Vec::new(),
             last_connection: PrimitiveDateTime::new(now.date(), now.time())
+            
         }
     }
 }

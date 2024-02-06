@@ -63,7 +63,7 @@ pub async fn handle_client(mut stream: TcpStream, arc_broker_state: Arc<Mutex<Br
                     // Connect
                     Some(MessageType::Connect) => {
                         println!("CONNECT message received");
-                        (client_id, will_topic, will_text, will_retain, will_qos, clean_session, keep_alive_secounds) = handle_connect(&buffer);
+                        (client_id, will_topic, will_text, will_retain, will_qos, clean_session, keep_alive_secounds) = handle_connect(&buffer, thread_id, current_broker_state);
                         
                         currect_client.client_id = client_id;
 
