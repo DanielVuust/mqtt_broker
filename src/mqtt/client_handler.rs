@@ -1,32 +1,27 @@
-use std::alloc::System;
-use std::borrow::Borrow;
 use std::io::Read;
 use std::net::TcpStream;
 use std::sync::{Arc, Mutex};
-use std::thread::{self, sleep, Thread};
+use std::thread::{self, sleep};
 use std::time::{Duration, SystemTime};
-use crate::mqtt::broker_state::Subscription;
 use crate::mqtt::message_handlers::connect_handler::handle_connect;
 use crate::mqtt::message_handlers::ping_handler::ping_resp;
 use crate::mqtt::message_handlers::publish_handler::handle_publish;
 use crate::mqtt::message_handlers::subscribe_handler::handle_subscribe;
 use crate::mqtt::message_sender::{ send_response};
 use crate::mqtt::message_type::MessageType;
-use crate::mqtt::utils::get_length;
 use time::{OffsetDateTime, PrimitiveDateTime};
-
 
 use super::broker_state::{BrokerState, SubscriptionMessage};
 
+
 // Handles client connection
-pub async fn handle_client(mut stream: TcpStream, arc_broker_state: Arc<Mutex<BrokerState>>, thread_id: f64) {
+pub fn handle_client(mut stream: TcpStream, arc_broker_state: Arc<Mutex<BrokerState>>, thread_id: f64) {
     println!("{}", thread_id);
     let mut buffer = [0; 2048];
     let mut client_id: String = "".to_string();    
     let mut will_topic: String  = "".to_string();
     let mut will_text: String  = "".to_string();
     let mut will_retain: bool;
-    //Chmut ange to two;bits 
     let mut will_qos: u8;
     let mut clean_session: bool;
     let mut keep_alive_secounds: usize;
@@ -34,16 +29,11 @@ pub async fn handle_client(mut stream: TcpStream, arc_broker_state: Arc<Mutex<Br
     let mut first_stream = stream.try_clone().expect("Cannot clone stream");
     let mut second_stream = stream.try_clone().expect("Cannot clone stream");
     
-    let callback_closure = |result: i32| {
-
-    };  
-    let runtime = tokio::runtime::Runtime::new().unwrap(); 
     let arc2 = Arc::clone(&arc_broker_state);
     thread::spawn(move || {
-        let _ = runtime.block_on(runtime.spawn(async move {
-            handle_second_stream(&mut second_stream, arc2, thread_id, callback_closure).await;
-        })); 
+        handle_second_stream(&mut second_stream, arc2, thread_id);
     });
+    
     println!("continue");
 
     // Reads data from stream until connection is closed
@@ -78,7 +68,6 @@ pub async fn handle_client(mut stream: TcpStream, arc_broker_state: Arc<Mutex<Br
                     Some(MessageType::Publish) =>{
                         println!("PUBLISH message received");
                         handle_publish(&mut stream, &buffer, thread_id, current_broker_state);
-                       return;
 
                     }
                     // Puback
@@ -100,7 +89,6 @@ pub async fn handle_client(mut stream: TcpStream, arc_broker_state: Arc<Mutex<Br
                     // Subscribe
                     Some(MessageType::Subscribe) =>{
                         println!("SUBSCRIBE message received");
-                        
                         handle_subscribe(&mut stream, &buffer, thread_id, current_broker_state);
                     }
                     // Unsubscribe
@@ -136,7 +124,7 @@ pub async fn handle_client(mut stream: TcpStream, arc_broker_state: Arc<Mutex<Br
     } {}
 }
 
-async fn handle_second_stream( stream: &mut TcpStream, arc_broker_state: Arc<Mutex<BrokerState>>, thread_id: f64, callback: fn(i32)){
+fn handle_second_stream( stream: &mut TcpStream, arc_broker_state: Arc<Mutex<BrokerState>>, thread_id: f64,){
     
     loop{
         sleep(Duration::from_millis(750));
@@ -167,7 +155,6 @@ async fn handle_second_stream( stream: &mut TcpStream, arc_broker_state: Arc<Mut
 fn send_publish_message(stream: &mut TcpStream, topic_name: String, message: String){
 
     let mut response: Vec<u8> = [].to_vec();
-    // let mut response: Vec<u8> = [48, 26, 0, 4, 102, 117, 99, 107, 123, 10, 32, 32, 34, 109, 115, 103, 34, 58, 32, 34, 104, 101, 108, 108, 111, 34, 10, 125].to_vec();
     response.push(MessageType::Publish.to_u8());
     response.push(0);
     response.push((topic_name.len() / 256) as u8);
@@ -182,11 +169,6 @@ fn send_publish_message(stream: &mut TcpStream, topic_name: String, message: Str
         response.push(i as u8);
 
     }
-    response.push(0);
-    response.push(0);
-    response.push(0);
-    response.push(0);
-    response.push(0);
     
     response[1] = response.len() as u8 - 2;
 
