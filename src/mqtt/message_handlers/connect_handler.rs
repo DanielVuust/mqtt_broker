@@ -1,7 +1,7 @@
 use std::sync::MutexGuard;
 
 
-use crate::mqtt::{broker_state::{BrokerState, Client}, utils::get_length};
+use crate::mqtt::{broker_state::{BrokerState, Client}, utils::get_message_length};
 
 
 
@@ -9,7 +9,7 @@ pub fn handle_connect(buffer: &[u8], thread_id: f64, mut broker_state: MutexGuar
 
 
     //Chceks protocol name;
-    let protocol_name_len = get_length(&buffer, 3);
+    let protocol_name_len = get_message_length(&buffer, 3);
     let protocol_name = &buffer[4..4 + protocol_name_len];
     if protocol_name != b"MQTT" {
         return panic!("Invalid protocol name");

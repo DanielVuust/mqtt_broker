@@ -1,4 +1,3 @@
-use std::{string, time::SystemTime};
 use time::{OffsetDateTime, PrimitiveDateTime};
 
 #[derive(Debug)]
@@ -28,7 +27,9 @@ pub struct Subscription {
 #[derive(Debug, Clone)]
 pub struct SubscriptionMessage {
     pub message: String,
+    pub qos: u8,
     pub message_sent: bool,
+    pub acknowledgd: bool,
 }
 
 impl BrokerState {
@@ -79,10 +80,12 @@ impl Subscription {
 }
 
 impl SubscriptionMessage {
-    pub fn new(message: String) -> Self {
+    pub fn new(message: String, qos: u8, message_sent: bool, acknowledge: bool) -> Self {
         SubscriptionMessage {
             message: message,
-            message_sent: false
+            qos: qos,
+            message_sent: false,
+            acknowledgd: false
         }
     }
 }

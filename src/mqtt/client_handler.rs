@@ -145,7 +145,6 @@ fn handle_second_stream( stream: &mut TcpStream, arc_broker_state: Arc<Mutex<Bro
             }
         }
         let now = OffsetDateTime::now_utc();
-        println!("{:?}", client.last_connection);
         //TODO check keep alive from client
         if client.last_connection + time::Duration::seconds((60 as f64 * 1.5) as i64) < PrimitiveDateTime::new(now.date(), now.time()) {
             println!("Killing connection due to no ping from client");
