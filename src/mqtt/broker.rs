@@ -16,25 +16,18 @@ pub fn start_broker() -> () {
         total_clients += 1;
         let broker_state: Arc<Mutex<BrokerState>> = Arc::clone(&broker_state);
         thread::spawn(move || {
-            let thread_id: f64;
-            (thread_id) = create_new_client(&broker_state);
-            
+            let thread_id = create_thread_id();
             handle_client(stream.unwrap(), broker_state, thread_id);
             
         });
     }
 }
 
-fn create_new_client(broker_state: &Arc<Mutex<BrokerState>>) -> f64{
+fn create_thread_id() -> f64{
 
     //Generate random thread id.
     let mut rng = rand::thread_rng();
     let thread_id: f64 = rng.gen(); 
-    
-    let mut t = broker_state.lock().unwrap();
-    let new_client: Client = Client::new(thread_id);
-    
-    (*t).clients.push(new_client);
 
     return thread_id;
 }

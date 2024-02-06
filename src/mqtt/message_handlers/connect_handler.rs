@@ -1,9 +1,11 @@
-use crate::mqtt::utils::get_length;
+use std::sync::MutexGuard;
+
+
+use crate::mqtt::{broker_state::{BrokerState, Client}, utils::get_length};
 
 
 
-pub fn handle_connect(buffer: &[u8]) -> (String, String, String, bool,
-    u8, bool, usize){
+pub fn handle_connect(buffer: &[u8], thread_id: f64, mut broker_state: MutexGuard<'_, BrokerState>){
 
 
     //Chceks protocol name;
@@ -13,14 +15,9 @@ pub fn handle_connect(buffer: &[u8]) -> (String, String, String, bool,
         return panic!("Invalid protocol name");
     }
 
-
-
     let mut client_id: String = "".to_string();    
     let mut will_topic: String  = "".to_string();
     let mut will_text: String  = "".to_string();
-    //Chmut ange to two;bits 
-    let mut will_qos: u8;
-    let mut clean_session: bool;
 
     let mut current_index_in_buffer :usize; // Removed value 2
     //Skip to connectflag. 
@@ -74,8 +71,8 @@ pub fn handle_connect(buffer: &[u8]) -> (String, String, String, bool,
 
     //Keep alive MSB; TODO change to something else.
     current_index_in_buffer += 1;
-    let keep_alive_secounds = buffer[current_index_in_buffer] as usize * 256 as usize + buffer[current_index_in_buffer + 1] as usize;
-    println!("keep_alive_secounds {:?}", keep_alive_secounds);
+    let keep_alive_seconds = buffer[current_index_in_buffer] as usize * 256 as usize + buffer[current_index_in_buffer + 1] as usize;
+    println!("keep_alive_secounds {:?}", keep_alive_seconds);
     //Clientid length MSB; TODO change to somehting else.
     current_index_in_buffer += 2;
 
@@ -138,20 +135,17 @@ pub fn handle_connect(buffer: &[u8]) -> (String, String, String, bool,
             password.push( buffer[index] as char);
         }
         println!("{}", password);
-
-        // current_index_in_buffer += password_length+2;
     } 
 
-
-    // //TODO check for correct position.
-    // println!("{:?}", &buffer[2..4]);
-    // // get_utf_8_string(&buffer[2..]);
-
-    // let length: usize = buffer[2] as usize * 256 as usize + buffer[1] as usize;
-
-    // for index in 2..length+2 {
-    //     println!("{}", buffer[index]);
-    // }
-    (client_id, will_topic, will_text, will_retain_flag,
-        will_qos_flag, clean_session_flag, keep_alive_secounds)
+    let new_client: Client = Client::new(
+        thread_id, 
+        client_id,
+        will_topic,
+        will_text,
+        will_retain_flag,
+        will_qos_flag,
+        clean_session_flag,
+        keep_alive_seconds,
+    Vec::new(), false);
+    (*broker_state).clients.push(new_client);
 }
