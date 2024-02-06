@@ -17,7 +17,7 @@ pub fn handle_subscribe(stream: &mut TcpStream, buffer: &[u8], thread_id: f64, b
     //Send response 
     let mut response: [u8; 5] = [0; 5];
     response[0] = MessageType::Suback.to_u8();
-    response[1] = 0;
+    response[1] = 0x03;
     response[2] = buffer[2];
     response[3] = buffer[3];
     response[4] = 0x00;

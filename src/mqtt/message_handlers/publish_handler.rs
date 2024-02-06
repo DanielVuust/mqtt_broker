@@ -1,6 +1,6 @@
 use std::{net::TcpStream, ops::Sub, sync::MutexGuard};
 
-use crate::mqtt::{broker, broker_state::{BrokerState, SubscriptionMessage}, message_handlers::message_reader::{read_package_length, read_uft_8_string_with_end_index}, message_sender::send_response, message_type::MessageType, utils::get_length};
+use crate::mqtt::{broker, broker_state::{BrokerState, SubscriptionMessage}, message_handlers::message_reader::{read_package_length, read_uft_8_string_with_end_index}, message_sender::send_response, message_type::MessageType};
 
 use super::message_reader::read_uft_8_string_with_length_bytes;
 

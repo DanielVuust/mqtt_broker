@@ -29,12 +29,9 @@ pub fn handle_client(mut stream: TcpStream, arc_broker_state: Arc<Mutex<BrokerSt
     let mut first_stream = stream.try_clone().expect("Cannot clone stream");
     let mut second_stream = stream.try_clone().expect("Cannot clone stream");
     
-    let callback_closure = |result: i32| {
-
-    };  
     let arc2 = Arc::clone(&arc_broker_state);
     thread::spawn(move || {
-            handle_second_stream(&mut second_stream, arc2, thread_id, callback_closure);
+        handle_second_stream(&mut second_stream, arc2, thread_id);
     });
     
     println!("continue");
@@ -71,7 +68,6 @@ pub fn handle_client(mut stream: TcpStream, arc_broker_state: Arc<Mutex<BrokerSt
                     Some(MessageType::Publish) =>{
                         println!("PUBLISH message received");
                         handle_publish(&mut stream, &buffer, thread_id, current_broker_state);
-                       return;
 
                     }
                     // Puback
@@ -93,7 +89,6 @@ pub fn handle_client(mut stream: TcpStream, arc_broker_state: Arc<Mutex<BrokerSt
                     // Subscribe
                     Some(MessageType::Subscribe) =>{
                         println!("SUBSCRIBE message received");
-                        
                         handle_subscribe(&mut stream, &buffer, thread_id, current_broker_state);
                     }
                     // Unsubscribe
@@ -129,7 +124,7 @@ pub fn handle_client(mut stream: TcpStream, arc_broker_state: Arc<Mutex<BrokerSt
     } {}
 }
 
-fn handle_second_stream( stream: &mut TcpStream, arc_broker_state: Arc<Mutex<BrokerState>>, thread_id: f64, callback: fn(i32)){
+fn handle_second_stream( stream: &mut TcpStream, arc_broker_state: Arc<Mutex<BrokerState>>, thread_id: f64,){
     
     loop{
         sleep(Duration::from_millis(750));
@@ -160,7 +155,6 @@ fn handle_second_stream( stream: &mut TcpStream, arc_broker_state: Arc<Mutex<Bro
 fn send_publish_message(stream: &mut TcpStream, topic_name: String, message: String){
 
     let mut response: Vec<u8> = [].to_vec();
-    // let mut response: Vec<u8> = [48, 26, 0, 4, 102, 117, 99, 107, 123, 10, 32, 32, 34, 109, 115, 103, 34, 58, 32, 34, 104, 101, 108, 108, 111, 34, 10, 125].to_vec();
     response.push(MessageType::Publish.to_u8());
     response.push(0);
     response.push((topic_name.len() / 256) as u8);
@@ -175,11 +169,6 @@ fn send_publish_message(stream: &mut TcpStream, topic_name: String, message: Str
         response.push(i as u8);
 
     }
-    response.push(0);
-    response.push(0);
-    response.push(0);
-    response.push(0);
-    response.push(0);
     
     response[1] = response.len() as u8 - 2;
 

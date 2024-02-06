@@ -15,13 +15,12 @@ pub fn start_broker() -> () {
     for stream in listener.unwrap().incoming() {
         total_clients += 1;
         let broker_state: Arc<Mutex<BrokerState>> = Arc::clone(&broker_state);
-        let runtime = tokio::runtime::Runtime::new().unwrap(); 
         thread::spawn(move || {
             let thread_id: f64;
             (thread_id) = create_new_client(&broker_state);
-            let _ = runtime.block_on(runtime.spawn(async move {
-                handle_client(stream.unwrap(), broker_state, thread_id);
-            }));    
+            
+            handle_client(stream.unwrap(), broker_state, thread_id);
+            
         });
     }
 }
