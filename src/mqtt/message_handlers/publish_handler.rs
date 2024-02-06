@@ -1,8 +1,8 @@
 use std::{net::TcpStream, ops::Sub, sync::MutexGuard};
 
-use crate::mqtt::{broker, broker_state::{BrokerState, SubscriptionMessage}, message_handlers::message_reader::{read_package_length, read_uft_8_string_with_end_index}, message_sender::send_response, message_type::MessageType, utils::get_message_length};
+use crate::mqtt::{broker, broker_state::{BrokerState, SubscriptionMessage}, message_handlers::message_reader::{read_package_length, read_utf_8_string_with_end_index}, message_sender::send_response, message_type::MessageType, utils::get_message_length};
 
-use super::message_reader::read_uft_8_string_with_length_bytes;
+use super::message_reader::read_utf_8_string_with_length_bytes;
 
 
 pub fn handle_publish(stream: &mut TcpStream, buffer: &[u8], thread_id: f64, mut broker_state: MutexGuard<'_, BrokerState>){
@@ -52,7 +52,7 @@ fn read_publish_bytes(buffer: &[u8]) -> (String, String, u8){
     
     let topic: String;
     // Reads the topics from buffer
-    (topic, reader_index) = read_uft_8_string_with_length_bytes(buffer, reader_index);
+    (topic, reader_index) = read_utf_8_string_with_length_bytes(buffer, reader_index);
     
     // If qos is greater than 0, the package identifier will be read from the buffer
     if qos > 0 {
@@ -61,7 +61,7 @@ fn read_publish_bytes(buffer: &[u8]) -> (String, String, u8){
 
     let message: String;
     // Reads the message from buffer
-    (message, reader_index) = read_uft_8_string_with_end_index(buffer, reader_index, package_length-1);
+    (message, reader_index) = read_utf_8_string_with_end_index(buffer, reader_index, package_length-1);
 
     (topic, message, qos)
 }

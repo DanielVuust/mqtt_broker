@@ -7,6 +7,7 @@ use crate::mqtt::message_handlers::connect_handler::handle_connect;
 use crate::mqtt::message_handlers::ping_handler::ping_resp;
 use crate::mqtt::message_handlers::publish_handler::handle_publish;
 use crate::mqtt::message_handlers::subscribe_handler::handle_subscribe;
+use crate::mqtt::message_handlers::unsubscribe_handle::handle_unsubscribe;
 use crate::mqtt::message_sender::{ send_response};
 use crate::mqtt::message_type::MessageType;
 use time::{OffsetDateTime, PrimitiveDateTime};
@@ -16,7 +17,7 @@ use super::broker_state::{BrokerState};
 // Handles client connection
 pub fn handle_client(mut stream: TcpStream, arc_broker_state: Arc<Mutex<BrokerState>>, thread_id: f64) {
     println!("{}", thread_id);
-    let mut buffer = [0; 2048];
+    let mut buffer = [0; 2024];
     let mut first_stream = stream.try_clone().expect("Cannot clone stream");
     let mut second_stream = stream.try_clone().expect("Cannot clone stream");
     
@@ -98,6 +99,7 @@ pub fn handle_client(mut stream: TcpStream, arc_broker_state: Arc<Mutex<BrokerSt
                     // Unsubscribe
                     Some(MessageType::Unsubscribe) =>{
                         println!("Unsubscribe message received");
+                        handle_unsubscribe(&mut stream, &buffer, current_client);
                     }
                     // Pingreq
                     Some(MessageType::Pingreq) =>{
@@ -117,7 +119,7 @@ pub fn handle_client(mut stream: TcpStream, arc_broker_state: Arc<Mutex<BrokerSt
                 }
                 println!("{:?}", MessageType::from_u8(buffer[0]));
 
-                buffer = [0; 2048];
+                buffer = [0; 2024];
                 true
             }
         }
@@ -136,10 +138,11 @@ fn handle_second_stream( stream: &mut TcpStream, arc_broker_state: Arc<Mutex<Bro
         let mut current_broker_state = arc_broker_state.lock().unwrap();
         let client = (*current_broker_state).clients.iter_mut().enumerate().find(| x: &(usize, &mut crate::mqtt::broker_state::Client) | &x.1.thread_id == &thread_id ).unwrap().1;
         
+        println!("here {:?}", *client);
         for j in client.subscriptions.iter_mut().enumerate() {
             for (index, message) 
-                in j.1.messages.iter_mut().enumerate()
-                    .find(|x| x.1.message_sent == false)  { 
+            in j.1.messages.iter_mut().enumerate()
+            .find(|x| x.1.message_sent == false)  { 
                 send_publish_message(stream, j.1.topic_title.to_string(), message.message.to_string());
                 message.message_sent = true;
             }

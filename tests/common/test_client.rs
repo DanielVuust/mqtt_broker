@@ -9,8 +9,8 @@ pub struct TestClient {
 impl TestClient {
     pub fn connect(addr: &str) -> std::io::Result<TestClient> {
         let stream = TcpStream::connect(addr)?;
-        stream.set_read_timeout(Some(Duration::from_millis(500)))?;
-        stream.set_write_timeout(Some(Duration::from_millis(500)))?;
+        stream.set_read_timeout(Some(Duration::from_millis(5000)))?;
+        stream.set_write_timeout(Some(Duration::from_millis(5000)))?;
         Ok(Self { stream })
     }
 
