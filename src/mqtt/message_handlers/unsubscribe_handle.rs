@@ -8,7 +8,10 @@ pub fn handle_unsubscribe(stream: &mut TcpStream, buffer: &[u8], client: &mut Cl
 
     let (topic_to_unsunscribe_from, package_identifier) = read_unsubscribe_buffer(buffer);
 
-    unsubscribe_from_topics(topic_to_unsunscribe_from, client)
+    unsubscribe_from_topics(topic_to_unsunscribe_from, client);
+
+    // TODO: Fix this
+    let package_identifier = package_identifier.parse::<u16>().unwrap();
 
     send_unsuback(stream, package_identifier);
 }
@@ -44,7 +47,8 @@ fn read_unsubscribe_buffer(buffer: &[u8]) -> (Vec<String>, String) {
         reader_index += current_topic_length;
     }
 
-    (topic_to_unsunscribe_from, package_identifier)
+    // TODO: Fix identifier
+    (topic_to_unsunscribe_from, package_identifier.to_string())
 }
 fn unsubscribe_from_topics(topics_to_unsunscribe_from: Vec<String>, client: &mut Client ){
     for topic in topics_to_unsunscribe_from{
