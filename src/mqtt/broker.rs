@@ -9,7 +9,8 @@ use super::broker_state::{self, BrokerState};
 
 
 pub fn start_broker() -> () {
-    let listener = TcpListener::bind("0.0.0.0:6942");
+    println!("Starting broker");
+    let listener = TcpListener::bind("0.0.0.0:7878");
     let mut total_clients: u8 = 0;
     let broker_state: Arc<Mutex<BrokerState>> = Arc::new(Mutex::new(broker_state::BrokerState::new()));
     for stream in listener.unwrap().incoming() {

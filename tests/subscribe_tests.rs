@@ -4,7 +4,7 @@ use crate::common::mqtt_commands_utils::{connack_vec, connect_vec, suback_vec, s
 use crate::common::test_utils::{connect_to_broker, start_test_broker};
 use crate::common::test_client::TestClient;
 
-// Use this command: cargo test --test subscribe_test
+// Use this command: cargo test --test subscribe_tests
 
 #[test]
 fn subscribe_successfully_to_topic_test() {
