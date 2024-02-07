@@ -5,7 +5,7 @@ use std::thread::{self, sleep};
 use std::time::{Duration};
 use crate::mqtt::message_handlers::connect_handler::{connect};
 use crate::mqtt::message_handlers::ping_handler::ping_resp;
-use crate::mqtt::message_handlers::publish_handler::{handle_publish, send_publish_message};
+use crate::mqtt::message_handlers::publish_handler::{handle_publish};
 use crate::mqtt::message_handlers::subscribe_handler::handle_subscribe;
 use crate::mqtt::message_handlers::pubrel_handler::handle_pubrel;
 use crate::mqtt::message_handlers::unsubscribe_handle::handle_unsubscribe;
@@ -140,4 +140,29 @@ fn handle_second_stream( stream: &mut TcpStream, arc_broker_state: Arc<Mutex<Bro
             return;
         }
     }
+}
+
+fn send_publish_message(stream: &mut TcpStream, topic_name: String, message: String){
+
+    let mut response: Vec<u8> = [].to_vec();
+    response.push(MessageType::Publish.to_u8());
+    response.push(0);
+    response.push((topic_name.len() / 256) as u8);
+    response.push((topic_name.len() % 256) as u8);
+    
+    for i in topic_name.chars(){
+        response.push(i as u8);
+        
+    }
+    
+    for i in message.chars(){
+        response.push(i as u8);
+
+    }
+    
+    response[1] = response.len() as u8 - 2;
+
+    println!("{:?}", response);
+
+    send_response(stream, &response);
 }
