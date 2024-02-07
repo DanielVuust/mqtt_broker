@@ -33,7 +33,7 @@ pub fn handle_client(mut stream: TcpStream, arc_broker_state: Arc<Mutex<BrokerSt
     println!("continue");
 
     //Delete this
-    first_stream.set_read_timeout(Some(Duration::from_secs(10)));
+    first_stream.set_read_timeout(Some(Duration::from_secs(100)));
 
     // Reads data from stream until connection is closed
     'tcpReader: while match first_stream.read(&mut buffer) {
@@ -41,11 +41,10 @@ pub fn handle_client(mut stream: TcpStream, arc_broker_state: Arc<Mutex<BrokerSt
         Ok(size) => {
             let mut current_broker_state = arc_broker_state.lock().unwrap();
             let current_client = (*current_broker_state).clients.iter_mut().enumerate().find(| x: &(usize, &mut crate::mqtt::broker_state::Client) | &x.1.thread_id == &thread_id ).unwrap().1;
-            let packet_identifier: u16 = get_packet_identifier_to_u16(&buffer, 2);
 
             if size == 0 {
                 println!("No data received, closing connection");
-                return;
+                break 'tcpReader;
             }
 
             let now = OffsetDateTime::now_utc();
@@ -55,24 +54,27 @@ pub fn handle_client(mut stream: TcpStream, arc_broker_state: Arc<Mutex<BrokerSt
                 // Publish
                 Some(MessageType::Publish) =>{
                     println!("PUBLISH message received");
-                    handle_publish(packet_identifier, &mut stream, &buffer, current_broker_state);
+                    handle_publish(&mut stream, &buffer, current_broker_state);
                 }
                 // Puback
                 Some(MessageType::Puback) =>{
                     println!("PUBACK message received");
                     // Received puback from client/subscriber (QoS 1) - updates state to message acknowledged
+                    let packet_identifier = get_packet_identifier_to_u16(&buffer, 2);
                     current_client.update_message_state(packet_identifier, MessageState::MessageAcknowledged);
                 }
                 // Pubrec
                 Some(MessageType::Pubrec) =>{
                     println!("PUBREC message received");
                     // Received pubrec from client/subscriber (QoS 2) - updates state to message received
+                    let packet_identifier = get_packet_identifier_to_u16(&buffer, 2);
                     current_client.update_message_state(packet_identifier, MessageState::MessageReceived);
                 }
                 // Pubrel
                 Some(MessageType::Pubrel) =>{
                     println!("PUBREL message received");
                     // Received pubrel from publisher (QoS 2) - updates state to publish released
+                    let packet_identifier = get_packet_identifier_to_u16(&buffer, 2);
                     current_client.update_message_state(packet_identifier, MessageState::PublishReleased);
                     send_response_packet(&mut stream, MessageType::Pubcomp, packet_identifier);
                 }
@@ -80,6 +82,7 @@ pub fn handle_client(mut stream: TcpStream, arc_broker_state: Arc<Mutex<BrokerSt
                 Some(MessageType::Pubcomp) =>{
                     println!("PUBCOMP message received");
                     // Received pubcomp from client/subscriber (QoS 2) - updates state to message completed
+                    let packet_identifier = get_packet_identifier_to_u16(&buffer, 2);
                     current_client.update_message_state(packet_identifier, MessageState::MessageCompleted);
                 }
                 // Subscribe
@@ -100,12 +103,12 @@ pub fn handle_client(mut stream: TcpStream, arc_broker_state: Arc<Mutex<BrokerSt
                 // Disconnect
                 Some(MessageType::Disconnect) => {
                     println!("DISCONNECT message received");
-                    return;
+                    break 'tcpReader;
                 }
                 // Invalid or unsupported
                 _ => {
                     println!("Invalid or unsupported message type");
-                    return;
+                    break 'tcpReader;
                 }
             }
 
@@ -142,17 +145,24 @@ fn handle_second_stream( stream: &mut TcpStream, arc_broker_state: Arc<Mutex<Bro
             .unwrap();
 
         let mut completed_messages = Vec::new();
+        let message_retry_timer = 10;
+        let max_retry_count = 5;
 
         for subscription in &mut client.subscriptions {
             for message in &mut subscription.messages {
+
                 // Resends message if no response packet from client (QoS 1 and 2)
                 if matches!(message.message_state, MessageState::PublishSent) && 
-                message.last_updated + time::Duration::seconds(10) < OffsetDateTime::now_utc() ||
+                message.last_updated + time::Duration::seconds(message_retry_timer) < OffsetDateTime::now_utc() ||
                 matches!(message.message_state, MessageState::MessageReceived) &&
-                message.last_updated + time::Duration::seconds(10) < OffsetDateTime::now_utc()
+                message.last_updated + time::Duration::seconds(message_retry_timer) < OffsetDateTime::now_utc()
                 {
                     send_publish_message(stream, subscription.topic_title.to_string(), message.message.to_string(), true);
                     message.add_retry();
+
+                    if message.retry_count >= max_retry_count {
+                        message.update_state(MessageState::MessageUnsuccessful);
+                    }
                 }
 
                 // Sends new message
@@ -169,7 +179,8 @@ fn handle_second_stream( stream: &mut TcpStream, arc_broker_state: Arc<Mutex<Bro
                 // Removes message from subscription message list if completed
                 if matches!(message.message_state, MessageState::MessageCompleted) ||
                 matches!(message.message_state, MessageState::MessageAcknowledged) ||
-                matches!(message.message_state, MessageState::None) 
+                matches!(message.message_state, MessageState::None) ||
+                matches!(message.message_state, MessageState::MessageUnsuccessful)
                 {
                     completed_messages.push(message.packet_identifier);
                 }
@@ -178,7 +189,7 @@ fn handle_second_stream( stream: &mut TcpStream, arc_broker_state: Arc<Mutex<Bro
 
         // Prints all messages in subscription message list
         // TODO: Remove this when done testing
-        println!("Messages in subscription list:");
+        //println!("Messages in subscription list:");
         for subscription in &mut client.subscriptions {
             for message in &mut subscription.messages {
                 println!("[]: {:?}", message);

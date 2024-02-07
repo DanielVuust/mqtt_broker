@@ -51,6 +51,7 @@ pub enum MessageState {
     MessageAcknowledged,
     MessageReceived,
     MessageCompleted,
+    MessageUnsuccessful,
 }
 
 impl BrokerState {

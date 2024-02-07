@@ -2,8 +2,6 @@ use std::{net::TcpStream, sync::MutexGuard};
 
 use crate::mqtt::{broker_state::{BrokerState, Subscription}, message_sender::send_response, message_type::MessageType};
 
-
-
 pub fn handle_subscribe(stream: &mut TcpStream, buffer: &[u8], thread_id: f64, broker_state: MutexGuard<'_, BrokerState>){
     let _package_identifier = buffer[2] as usize * 256 + buffer[3] as usize;
 
