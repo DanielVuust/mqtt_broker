@@ -7,12 +7,13 @@ use crate::mqtt::message_handlers::connect_handler::handle_connect;
 use crate::mqtt::message_handlers::ping_handler::ping_resp;
 use crate::mqtt::message_handlers::publish_handler::handle_publish;
 use crate::mqtt::message_handlers::subscribe_handler::handle_subscribe;
+use crate::mqtt::message_handlers::pubrel_handler::handle_pubrel;
 use crate::mqtt::message_handlers::unsubscribe_handle::handle_unsubscribe;
 use crate::mqtt::message_sender::{ send_response};
 use crate::mqtt::message_type::MessageType;
 use time::{OffsetDateTime, PrimitiveDateTime};
 
-use super::broker_state::{BrokerState};
+use super::broker_state::{BrokerState, MessageState};
 
 // Handles client connection
 pub fn handle_client(mut stream: TcpStream, arc_broker_state: Arc<Mutex<BrokerState>>, thread_id: f64) {
@@ -86,6 +87,7 @@ pub fn handle_client(mut stream: TcpStream, arc_broker_state: Arc<Mutex<BrokerSt
                     // Pubrel
                     Some(MessageType::Pubrel) =>{
                         println!("PUBREL message received");
+                        handle_pubrel(&mut stream, &buffer, current_client);
                     }
                     // Pubcomp
                     Some(MessageType::Pubcomp) =>{
@@ -117,7 +119,7 @@ pub fn handle_client(mut stream: TcpStream, arc_broker_state: Arc<Mutex<BrokerSt
                         return;
                     }
                 }
-                println!("{:?}", MessageType::from_u8(buffer[0]));
+                //println!("{:?}", MessageType::from_u8(buffer[0]));
 
                 buffer = [0; 2024];
                 true
@@ -136,26 +138,30 @@ fn handle_second_stream( stream: &mut TcpStream, arc_broker_state: Arc<Mutex<Bro
     loop{
         sleep(Duration::from_millis(750));
         let mut current_broker_state = arc_broker_state.lock().unwrap();
-        let client = (*current_broker_state).clients.iter_mut().enumerate().find(| x: &(usize, &mut crate::mqtt::broker_state::Client) | &x.1.thread_id == &thread_id ).unwrap().1;
-        
-        println!("here {:?}", *client);
-        for j in client.subscriptions.iter_mut().enumerate() {
-            for (index, message) 
-            in j.1.messages.iter_mut().enumerate()
-            .find(|x| x.1.message_sent == false)  { 
-                send_publish_message(stream, j.1.topic_title.to_string(), message.message.to_string());
-                message.message_sent = true;
+        let client = current_broker_state.clients.iter_mut()
+            .find(|client| client.thread_id == thread_id)
+            .unwrap();
+
+        for subscription in &mut client.subscriptions {
+            for message in &mut subscription.messages {
+                if matches!(message.message_state, MessageState::Acknowledged) || 
+                matches!(message.message_state, MessageState::Released) || 
+                matches!(message.message_state, MessageState::None) 
+                {
+                    send_publish_message(stream, subscription.topic_title.to_string(), message.message.to_string());
+                    message.message_state = MessageState::Sent;
+                }
             }
         }
+        
         let now = OffsetDateTime::now_utc();
+
         //TODO check keep alive from client
         if client.last_connection + time::Duration::seconds((60 as f64 * 1.5) as i64) < PrimitiveDateTime::new(now.date(), now.time()) {
             println!("Killing connection due to no ping from client");
             client.cancellation_requested = true;
             return;
         }
-
-
     }
 }
 

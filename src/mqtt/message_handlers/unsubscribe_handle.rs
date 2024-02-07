@@ -44,7 +44,8 @@ fn read_unsubscribe_buffer(buffer: &[u8]) -> (Vec<String>, u16) {
         reader_index += current_topic_length;
     }
 
-    (topic_to_unsunscribe_from, package_identifier)
+    // TODO: Fix identifier
+    (topic_to_unsunscribe_from, package_identifier.to_string())
 }
 fn unsubscribe_from_topics(topics_to_unsunscribe_from: Vec<String>, client: &mut Client ){
     for topic in topics_to_unsunscribe_from{
