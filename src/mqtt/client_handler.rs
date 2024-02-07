@@ -113,11 +113,14 @@ pub fn handle_client(mut stream: TcpStream, arc_broker_state: Arc<Mutex<BrokerSt
     }
     {}
     {
-        //Store will message to subscriber.
-        let mut current_broker_state1 = arc_broker_state.lock().unwrap();
-        let current_client = current_broker_state1.clients.iter().enumerate().find(| x: &(usize, &crate::mqtt::broker_state::Client) | &x.1.thread_id == &thread_id ).unwrap().1;
-       
-        process_publish(&mut current_broker_state1, &current_client.will_topic, &current_client.will_text, current_client.will_qos, MessageState::None, 44);
+
+        // Store will message to subscriber.
+    let mut current_broker_state1 = arc_broker_state.lock().unwrap();
+    let current_client = current_broker_state1.clients.iter_mut().find(|client| client.thread_id == thread_id).unwrap();
+    
+    let current_client = current_client.clone();
+    process_publish(&mut current_broker_state1, &current_client.will_topic, &current_client.will_text, current_client.will_qos, MessageState::None, 44);
+
     }
 }
 
