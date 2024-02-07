@@ -1,10 +1,10 @@
-
 use time::{OffsetDateTime, PrimitiveDateTime};
 
 #[derive(Debug)]
 pub struct BrokerState {
     pub clients: Vec<Client>,
 }
+
 #[derive(Debug)]
 pub struct Client {
     pub thread_id: f64,
@@ -20,15 +20,28 @@ pub struct Client {
     pub clean_session: bool,
     pub keep_alive_seconds: usize,
 }
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Subscription {
     pub topic_title: String,
     pub messages: Vec<SubscriptionMessage>,
 }
+
 #[derive(Debug, Clone)]
 pub struct SubscriptionMessage {
+    pub packet_identifier: u16,
     pub message: String,
-    pub message_sent: bool,
+    pub qos: u8,
+    pub message_state: MessageState,
+}
+
+#[derive(Debug, Clone)]
+pub enum MessageState {
+    Sent,
+    Acknowledged,
+    Received,
+    Released,
+    Completed,
+    None,
 }
 
 impl BrokerState {
@@ -79,10 +92,12 @@ impl Subscription {
 }
 
 impl SubscriptionMessage {
-    pub fn new(message: String) -> Self {
+    pub fn new(message: String, qos: u8, message_state: MessageState, packet_identifier: u16) -> Self {
         SubscriptionMessage {
+            packet_identifier: packet_identifier,
             message: message,
-            message_sent: false
+            qos: qos,
+            message_state: message_state,
         }
     }
 }

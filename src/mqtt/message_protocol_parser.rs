@@ -1,4 +1,4 @@
-use crate::mqtt::utils::get_length;
+use crate::mqtt::utils::get_message_length;
 
 // Handles CONNECTION parsing
 pub fn parse_connect_message(buffer: &[u8]) -> Result<(), String> {
@@ -18,7 +18,7 @@ pub fn parse_connect_message(buffer: &[u8]) -> Result<(), String> {
     // This gets us the length of the protocol name and converts it to usize
     //let protocol_name_len = ((buffer[2] as usize) << 8) | buffer[3] as usize;
 
-    let protocol_name_len = get_length(buffer, 3);
+    let protocol_name_len = get_message_length(buffer, 3);
 
     // Get's the protocol name from the buffer[start..end]
     let protocol_name = &buffer[4..4 + protocol_name_len];
