@@ -1,7 +1,6 @@
 use std::{net::TcpListener, sync::{Arc, Mutex}};
 use rand::Rng;
 
-
 use crate::mqtt::client_handler::handle_client;
 use std::thread;
 

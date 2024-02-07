@@ -2,14 +2,17 @@ use std::io::Read;
 use std::net::TcpStream;
 use std::sync::{Arc, Mutex};
 use std::thread::{self, sleep};
-use std::time::{Duration};
-use crate::mqtt::message_handlers::connect_handler::{connect};
+use std::time::Duration;
+use crate::mqtt::message_handlers::connect_handler::connect;
 use crate::mqtt::message_handlers::ping_handler::ping_resp;
-use crate::mqtt::message_handlers::publish_handler::{handle_publish};
+use crate::mqtt::message_handlers::puback_handler::handle_puback;
+use crate::mqtt::message_handlers::pubcomp_handler::handle_pubcomp;
+use crate::mqtt::message_handlers::publish_handler::handle_publish;
 use crate::mqtt::message_handlers::subscribe_handler::handle_subscribe;
 use crate::mqtt::message_handlers::pubrel_handler::handle_pubrel;
 use crate::mqtt::message_handlers::unsubscribe_handle::handle_unsubscribe;
-use crate::mqtt::message_sender::{ send_response};
+use crate::mqtt::message_handlers::pubrec_handler::handle_pubrec;
+use crate::mqtt::message_sender::send_response;
 use crate::mqtt::message_type::MessageType;
 use time::{OffsetDateTime, PrimitiveDateTime};
 
@@ -56,10 +59,12 @@ pub fn handle_client(mut stream: TcpStream, arc_broker_state: Arc<Mutex<BrokerSt
                     // Puback
                     Some(MessageType::Puback) =>{
                         println!("PUBACK message received");
+                        handle_puback(&mut stream, &buffer, current_client);
                     }
                     // Pubrec
                     Some(MessageType::Pubrec) =>{
                         println!("PUBREC message received");
+                        handle_pubrec(&mut stream, &buffer, current_client);
                     }
                     // Pubrel
                     Some(MessageType::Pubrel) =>{
@@ -69,6 +74,7 @@ pub fn handle_client(mut stream: TcpStream, arc_broker_state: Arc<Mutex<BrokerSt
                     // Pubcomp
                     Some(MessageType::Pubcomp) =>{
                         println!("PUBCOMP message received");
+                        handle_pubcomp(&mut stream, &buffer, current_client);
                     }
                     // Subscribe
                     Some(MessageType::Subscribe) =>{
@@ -121,12 +127,12 @@ fn handle_second_stream( stream: &mut TcpStream, arc_broker_state: Arc<Mutex<Bro
 
         for subscription in &mut client.subscriptions {
             for message in &mut subscription.messages {
-                if matches!(message.message_state, MessageState::Acknowledged) || 
-                matches!(message.message_state, MessageState::Released) || 
+                if matches!(message.message_state, MessageState::PublishAcknowledged) || 
+                matches!(message.message_state, MessageState::PublishReleased) || 
                 matches!(message.message_state, MessageState::None) 
                 {
                     send_publish_message(stream, subscription.topic_title.to_string(), message.message.to_string());
-                    message.message_state = MessageState::Sent;
+                    message.update_state(MessageState::PublishSent);
                 }
             }
         }

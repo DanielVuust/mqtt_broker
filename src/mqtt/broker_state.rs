@@ -1,3 +1,5 @@
+use std::alloc::System;
+
 use time::{OffsetDateTime, PrimitiveDateTime};
 
 #[derive(Debug)]
@@ -32,16 +34,25 @@ pub struct SubscriptionMessage {
     pub message: String,
     pub qos: u8,
     pub message_state: MessageState,
+    pub last_updated: OffsetDateTime, // Timestamp for last state/message update
+    pub retry_count: u8, // Number of times the message has been retried
 }
 
 #[derive(Debug, Clone)]
 pub enum MessageState {
-    Sent,
-    Acknowledged,
-    Received,
-    Released,
-    Completed,
+    // Default state
     None,
+    
+    // Publish states
+    PublishSent,
+    PublishAcknowledged,
+    PublishReceived,
+    PublishReleased,
+
+    // Subscribe states
+    SubscriptionAcknowledged,
+    SubscriptionReceived,
+    SubscriptionCompleted,
 }
 
 impl BrokerState {
@@ -98,7 +109,15 @@ impl SubscriptionMessage {
             message: message,
             qos: qos,
             message_state: message_state,
+            last_updated: OffsetDateTime::now_utc(),
+            retry_count: 0,
         }
+    }
+
+    pub fn update_state(&mut self, new_state: MessageState) {
+        self.message_state = new_state;
+        self.last_updated = OffsetDateTime::now_utc();
+        //self.retry_count = 0; // Reset the retry count
     }
 }
 

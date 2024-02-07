@@ -4,4 +4,7 @@ pub mod subscribe_handler;
 pub mod publish_handler;
 pub mod pubrel_handler;
 pub mod unsubscribe_handle;
+pub mod pubrec_handler;
+pub mod pubcomp_handler;
+pub mod puback_handler;
 mod message_reader;

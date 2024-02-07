@@ -54,7 +54,7 @@ pub fn get_packet_identifier_to_u16(buffer: &[u8], index: usize) -> u16 {
     let packet_identifier = ((buffer[index] as u16) << 8) | (buffer[index + 1] as u16);
 
     // TODO: Remove this print
-    //println!("TRANFORMED TO: {}", packet_identifier);
+    //println!("CONVERTED TO: {}", packet_identifier);
 
     packet_identifier
 }

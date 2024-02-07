@@ -37,6 +37,7 @@ pub fn connect_to_broker(mut client: TestClient, client_identifier: String, keep
     
     client
 }
+
 pub fn subscribe_to_topics(mut client: TestClient, package_identifier: u16, topics: Vec<String>, topic_qoses: Vec<u8>) -> TestClient{
     
     //Creates the subscribe request to be sent to the broker
