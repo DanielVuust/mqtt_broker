@@ -1,8 +1,7 @@
 use std::{net::TcpStream, ops::Sub, sync::MutexGuard};
 
-use crate::mqtt::{broker_state::{BrokerState, SubscriptionMessage}, message_handlers::message_reader::{read_package_length, read_uft_8_string_with_end_index}, message_sender::send_response, message_type::MessageType, utils::get_message_length};
+use crate::mqtt::{broker_state::{BrokerState, SubscriptionMessage}, message_handlers::message_reader::{read_package_length, read_utf_8_string_with_end_index, read_utf_8_string_with_length_bytes}, message_type::MessageType};
 use crate::mqtt::broker_state::MessageState;
-use super::message_reader::read_uft_8_string_with_length_bytes;
 use crate::mqtt::message_sender::{send_response_packet, transform_package_identifier_to_u8, get_packet_identifier_to_u16};
 
 
@@ -40,7 +39,7 @@ fn read_publish_bytes(buffer: &[u8]) -> (String, String, u8, u16){
     
     let topic: String;
     // Reads the topics from buffer
-    (topic, reader_index) = read_uft_8_string_with_length_bytes(buffer, reader_index);
+    (topic, reader_index) = read_utf_8_string_with_length_bytes(buffer, reader_index);
     
     let mut packet_identifier: u16 = 0;
 
@@ -52,7 +51,7 @@ fn read_publish_bytes(buffer: &[u8]) -> (String, String, u8, u16){
 
     let message: String;
     // Reads the message from buffer
-    (message, reader_index) = read_uft_8_string_with_end_index(buffer, reader_index, package_length-1);
+    (message, reader_index) = read_utf_8_string_with_end_index(buffer, reader_index, package_length-1);
 
     (topic, message, qos, packet_identifier)
 }

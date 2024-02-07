@@ -8,6 +8,7 @@ use crate::mqtt::message_handlers::ping_handler::ping_resp;
 use crate::mqtt::message_handlers::publish_handler::handle_publish;
 use crate::mqtt::message_handlers::subscribe_handler::handle_subscribe;
 use crate::mqtt::message_handlers::pubrel_handler::handle_pubrel;
+use crate::mqtt::message_handlers::unsubscribe_handle::handle_unsubscribe;
 use crate::mqtt::message_sender::{ send_response};
 use crate::mqtt::message_type::MessageType;
 use time::{OffsetDateTime, PrimitiveDateTime};
@@ -17,7 +18,7 @@ use super::broker_state::{BrokerState, MessageState};
 // Handles client connection
 pub fn handle_client(mut stream: TcpStream, arc_broker_state: Arc<Mutex<BrokerState>>, thread_id: f64) {
     println!("{}", thread_id);
-    let mut buffer = [0; 2048];
+    let mut buffer = [0; 2024];
     let mut first_stream = stream.try_clone().expect("Cannot clone stream");
     let mut second_stream = stream.try_clone().expect("Cannot clone stream");
     
@@ -100,6 +101,7 @@ pub fn handle_client(mut stream: TcpStream, arc_broker_state: Arc<Mutex<BrokerSt
                     // Unsubscribe
                     Some(MessageType::Unsubscribe) =>{
                         println!("Unsubscribe message received");
+                        handle_unsubscribe(&mut stream, &buffer, current_client);
                     }
                     // Pingreq
                     Some(MessageType::Pingreq) =>{
@@ -119,7 +121,7 @@ pub fn handle_client(mut stream: TcpStream, arc_broker_state: Arc<Mutex<BrokerSt
                 }
                 //println!("{:?}", MessageType::from_u8(buffer[0]));
 
-                buffer = [0; 2048];
+                buffer = [0; 2024];
                 true
             }
         }

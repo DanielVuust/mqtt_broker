@@ -20,8 +20,7 @@ pub struct Client {
     pub clean_session: bool,
     pub keep_alive_seconds: usize,
 }
-
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Subscription {
     pub topic_title: String,
     pub messages: Vec<SubscriptionMessage>,
