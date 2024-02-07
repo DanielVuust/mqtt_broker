@@ -3,45 +3,40 @@ use std::{net::TcpStream, sync::MutexGuard};
 use crate::mqtt::{broker_state::{BrokerState, Subscription}, message_sender::send_response, message_type::MessageType};
 
 pub fn handle_subscribe(stream: &mut TcpStream, buffer: &[u8], thread_id: f64, broker_state: MutexGuard<'_, BrokerState>){
-    let _package_identifier = buffer[2] as usize * 256 + buffer[3] as usize;
+    // Extract the topic name and QoS level
+    let (topic, requested_qos) = get_topic_name_and_qos(buffer, 4);
+    //println!("Topic: {:?}, Requested QoS: {}", topic, requested_qos);
 
-    //Get topic names from buffer:
-    let topic = get_topic_name(buffer, 4);
-    println!("{:?}", topic);
+    // Change broker state to include the new subscription with its requested QoS
+    add_topic_to_broker_state(topic.clone(), thread_id, requested_qos, broker_state);
 
-    //Change broker state
-    add_topic_to_broker_state(topic, thread_id, broker_state);
-
-    //Send response 
+    // Create a SUBACK response packet.
     let mut response: [u8; 5] = [0; 5];
     response[0] = MessageType::Suback.to_u8();
-    response[1] = 0x03;
-    response[2] = buffer[2];
-    response[3] = buffer[3];
-    response[4] = 0x00;
-    println!("{:?}", response);
+    response[1] = 0x03; // Remaining length
+    response[2] = buffer[2]; // Packet identifier MSB
+    response[3] = buffer[3]; // Packet identifier LSB
+    response[4] = requested_qos; // QoS level
+    println!("Response: {:?}", response);
+
+    // Send the SUBACK response to the client.
     send_response(stream, &response);
 }
 
-fn get_topic_name(buffer: &[u8], mut current_buffer_index: usize) -> String {
+fn get_topic_name_and_qos(buffer: &[u8], start_index: usize) -> (String, u8) {
+    let topic_length = (buffer[start_index] as usize) << 8 | (buffer[start_index + 1] as usize);
+    let mut current_index = start_index + 2;
 
-    let topic_length = buffer[current_buffer_index] as usize * 256 as usize + buffer[current_buffer_index + 1] as usize;
-    current_buffer_index += 2;
+    let topic = String::from_utf8(buffer[current_index..current_index + topic_length].to_vec()).unwrap();
+    current_index += topic_length;
 
-    let mut topic = "".to_string();
-    for index in current_buffer_index..current_buffer_index+topic_length{
-        topic.push(buffer[index] as char);
-    }
-    current_buffer_index += topic_length;
-    let _topic_qos: u8 = buffer[current_buffer_index];
-    current_buffer_index += 1;
+    let qos = buffer[current_index];
 
-    let _ = current_buffer_index;
-    
-    topic
+    (topic, qos)
 }
 
-fn add_topic_to_broker_state(topic: String, thread_id: f64, mut broker_state: MutexGuard<'_, BrokerState>){
-    let t = (*broker_state).clients.iter_mut().enumerate().find(| x: &(usize, &mut crate::mqtt::broker_state::Client) | &x.1.thread_id == &thread_id );
-    t.unwrap().1.subscriptions.push(Subscription::new(topic));
+fn add_topic_to_broker_state(topic: String, thread_id: f64, qos: u8, mut broker_state: MutexGuard<'_, BrokerState>) {
+    if let Some(client) = (*broker_state).clients.iter_mut().find(|client| client.thread_id == thread_id) {
+        client.subscriptions.push(Subscription::new(topic, qos));
+    }
 }

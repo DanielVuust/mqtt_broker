@@ -23,6 +23,7 @@ pub struct Client {
 #[derive(Debug, Clone)]
 pub struct Subscription {
     pub topic_title: String,
+    pub qos: u8,
     pub messages: Vec<SubscriptionMessage>,
 }
 
@@ -109,9 +110,10 @@ impl Client {
 }
 
 impl Subscription {
-    pub fn new(topic: String) -> Self {
+    pub fn new(topic: String, qos: u8) -> Self {
         Subscription {
             topic_title: topic,
+            qos: qos,
             messages: Vec::new(),
         }
     }

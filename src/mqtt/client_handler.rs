@@ -32,8 +32,8 @@ pub fn handle_client(mut stream: TcpStream, arc_broker_state: Arc<Mutex<BrokerSt
     
     println!("continue");
 
-    //Delete this
-    first_stream.set_read_timeout(Some(Duration::from_secs(100)));
+    // TODO: Delete this
+    //first_stream.set_read_timeout(Some(Duration::from_secs(100)));
 
     // Reads data from stream until connection is closed
     'tcpReader: while match first_stream.read(&mut buffer) {
@@ -69,6 +69,7 @@ pub fn handle_client(mut stream: TcpStream, arc_broker_state: Arc<Mutex<BrokerSt
                     // Received pubrec from client/subscriber (QoS 2) - updates state to message received
                     let packet_identifier = get_packet_identifier_to_u16(&buffer, 2);
                     current_client.update_message_state(packet_identifier, MessageState::MessageReceived);
+                    send_response_packet(&mut stream, MessageType::Pubrel, packet_identifier);
                 }
                 // Pubrel
                 Some(MessageType::Pubrel) =>{
@@ -157,7 +158,7 @@ fn handle_second_stream( stream: &mut TcpStream, arc_broker_state: Arc<Mutex<Bro
                 matches!(message.message_state, MessageState::MessageReceived) &&
                 message.last_updated + time::Duration::seconds(message_retry_timer) < OffsetDateTime::now_utc()
                 {
-                    send_publish_message(stream, subscription.topic_title.to_string(), message.message.to_string(), true);
+                    send_publish_message(message.packet_identifier, stream, subscription.topic_title.to_string(), message.message.to_string(), false, message.qos);
                     message.add_retry();
 
                     if message.retry_count >= max_retry_count {
@@ -173,7 +174,7 @@ fn handle_second_stream( stream: &mut TcpStream, arc_broker_state: Arc<Mutex<Bro
                     if message.qos > 0 {
                         message.update_state(MessageState::PublishSent);
                     }
-                    send_publish_message(stream, subscription.topic_title.to_string(), message.message.to_string(), false);
+                    send_publish_message(message.packet_identifier, stream, subscription.topic_title.to_string(), message.message.to_string(), false, message.qos);
                 }
 
                 // Removes message from subscription message list if completed
@@ -212,8 +213,8 @@ fn handle_second_stream( stream: &mut TcpStream, arc_broker_state: Arc<Mutex<Bro
     }
 }
 
-fn send_publish_message(stream: &mut TcpStream, topic_name: String, message: String, is_retry: bool){
-    let mut response: Vec<u8> = [].to_vec();
+fn send_publish_message(packet_identifier: u16, stream: &mut TcpStream, topic_name: String, message: String, is_retry: bool, message_qos: u8){
+    let mut response: Vec<u8> = Vec::new();
 
     let mut message_type = MessageType::Publish.to_u8();
 
@@ -221,22 +222,25 @@ fn send_publish_message(stream: &mut TcpStream, topic_name: String, message: Str
         message_type |= 0b00001000; // Sets the DUP flag to 1 - if message is a retry
     }
 
-    response.push(message_type);
-    response.push(0);
-    response.push((topic_name.len() / 256) as u8);
-    response.push((topic_name.len() % 256) as u8);
-    
-    for i in topic_name.chars(){
-        response.push(i as u8);
-        
-    }
-    
-    for i in message.chars(){
-        response.push(i as u8);
+    message_type |= (message_qos << 1) & 0b00000110; // Sets the QoS level
 
+    response.push(message_type);
+    response.push(0); // Remaining length
+    response.push((topic_name.len() / 256) as u8); // Topic length MSB
+    response.push((topic_name.len() % 256) as u8); // Topic length LSB
+    
+    response.extend_from_slice(topic_name.as_bytes());
+
+    // Appends packet identifier if QoS level is 1 or 2
+    if message_qos > 0 {
+        response.push((packet_identifier / 256) as u8); // Packet identifier MSB
+        response.push((packet_identifier % 256) as u8); // Packet identifier LSB
     }
     
-    response[1] = response.len() as u8 - 2;
+    // Appends the message (payload) to the response
+    response.extend_from_slice(message.as_bytes());
+
+    response[1] = response.len() as u8 - 2; // Subtract the fixed header length (2 bytes)
 
     println!("{:?}", response);
 
