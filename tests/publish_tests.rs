@@ -10,7 +10,7 @@ use common::test_utils::subscribe_to_topics;
 use crate::common::test_utils::{connect_to_broker, start_test_broker};
 use crate::common::test_client::TestClient;
 
-// Use this command: cargo test --test publish-tests
+// Use this command: cargo test --test publish_tests
 
 #[test]
 fn publish_to_topic_test() {

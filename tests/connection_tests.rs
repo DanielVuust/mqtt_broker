@@ -4,7 +4,7 @@ use crate::common::mqtt_commands_utils::{connack_vec, connect_vec,};
 use crate::common::test_utils::start_test_broker;
 use crate::common::test_client::TestClient;
 
-// Use this command: cargo test --test connection_test
+// Use this command: cargo test --test connection_tests
 
 #[test]
 fn connect_with_no_falgs_test() {
