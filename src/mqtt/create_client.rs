@@ -193,6 +193,7 @@ fn extract_username(buffer: &[u8], username_flag: bool, mut current_index_in_buf
 
         // Update the index in the buffer
         current_index_in_buffer += username_length + 2;
+        let _ = current_index_in_buffer;
     }
 
     username

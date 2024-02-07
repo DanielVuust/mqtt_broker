@@ -1,6 +1,6 @@
 use std::io::Read;
 use std::net::TcpStream;
-use std::sync::{Arc, Mutex, MutexGuard};
+use std::sync::{Arc, Mutex};
 use std::thread::{self, sleep};
 use std::time::{Duration};
 use crate::mqtt::message_handlers::connect_handler::{connect};
