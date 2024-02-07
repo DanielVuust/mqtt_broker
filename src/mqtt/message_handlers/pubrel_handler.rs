@@ -1,5 +1,5 @@
-use std::{net::TcpStream, ops::Sub, sync::{Arc, Mutex, MutexGuard}};
-use crate::mqtt::{broker_state::{BrokerState, Client, MessageState}, message_sender::{get_packet_identifier_to_u16, send_response_packet}, message_type::MessageType};
+use std::{net::TcpStream};
+use crate::mqtt::{broker_state::{Client, MessageState}, message_sender::{get_packet_identifier_to_u16, send_response_packet}, message_type::MessageType};
 
 // Handle PUBREL message
 pub fn handle_pubrel(stream: &mut TcpStream, buffer: &[u8], client: &mut Client) {

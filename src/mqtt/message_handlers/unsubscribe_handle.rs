@@ -57,6 +57,6 @@ fn unsubscribe_from_topics(topics_to_unsunscribe_from: Vec<String>, client: &mut
 fn get_length(buffer: &[u8], index: usize) -> usize {
     buffer[index] as usize * 256 as usize + buffer[index + 1] as usize
 }
-fn send_unsuback(tream: &mut TcpStream, package_identifier: u16){
+fn send_unsuback(_tream: &mut TcpStream, _package_identifier: u16){
 
 }

@@ -1,11 +1,11 @@
-use std::{net::{TcpListener, TcpStream}, string, sync::MutexGuard};
+use std::{net::{TcpStream}, sync::MutexGuard};
 
-use crate::mqtt::{broker_state::{self, BrokerState, Subscription}, message_sender::{send_response}, message_type::MessageType};
+use crate::mqtt::{broker_state::{BrokerState, Subscription}, message_sender::{send_response}, message_type::MessageType};
 
 
 
 pub fn handle_subscribe(stream: &mut TcpStream, buffer: &[u8], thread_id: f64, broker_state: MutexGuard<'_, BrokerState>){
-    let package_identifier = buffer[2] as usize * 256 + buffer[3] as usize;
+    let _package_identifier = buffer[2] as usize * 256 + buffer[3] as usize;
 
     //Get topic names from buffer:
     let topic = get_topic_name(buffer, 4);
@@ -35,9 +35,11 @@ fn get_topic_name(buffer: &[u8], mut current_buffer_index: usize) -> String {
         topic.push(buffer[index] as char);
     }
     current_buffer_index += topic_length;
-    let topic_qos: u8 = buffer[current_buffer_index];
+    let _topic_qos: u8 = buffer[current_buffer_index];
     current_buffer_index += 1;
 
+    let _ = current_buffer_index;
+    
     topic
 }
 

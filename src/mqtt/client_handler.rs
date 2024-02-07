@@ -22,7 +22,7 @@ pub fn handle_client(mut stream: TcpStream, arc_broker_state: Arc<Mutex<BrokerSt
     let mut first_stream = stream.try_clone().expect("Cannot clone stream");
     let mut second_stream = stream.try_clone().expect("Cannot clone stream");
     
-    let mut current_broker_state = arc_broker_state.lock().unwrap();
+    let current_broker_state = arc_broker_state.lock().unwrap();
 
     connect(&mut first_stream, &mut buffer, thread_id, current_broker_state);
 

@@ -1,7 +1,7 @@
 use std::io::Write;
 use std::net::TcpStream;
 
-use super::message_type::{self, MessageType};
+use super::message_type::{MessageType};
 
 // Returns an answer to the client
 pub fn send_response(stream: &mut TcpStream, buffer: &[u8], ) {

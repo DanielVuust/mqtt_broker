@@ -1,11 +1,11 @@
-use std::{net::TcpStream, ops::Sub, sync::MutexGuard};
+use std::{net::TcpStream, sync::MutexGuard};
 
 use crate::mqtt::{broker_state::{BrokerState, SubscriptionMessage}, message_handlers::message_reader::{read_package_length, read_utf_8_string_with_end_index, read_utf_8_string_with_length_bytes}, message_type::MessageType};
 use crate::mqtt::broker_state::MessageState;
-use crate::mqtt::message_sender::{send_response_packet, transform_package_identifier_to_u8, get_packet_identifier_to_u16};
+use crate::mqtt::message_sender::{send_response_packet, get_packet_identifier_to_u16};
 
 
-pub fn handle_publish(stream: &mut TcpStream, buffer: &[u8], thread_id: f64, mut broker_state: MutexGuard<'_, BrokerState>){
+pub fn handle_publish(stream: &mut TcpStream, buffer: &[u8], _thread_id: f64, mut broker_state: MutexGuard<'_, BrokerState>){
     let ( topic, message, qos, packet_identifier) = read_publish_bytes(buffer);
     
     match qos{
@@ -52,7 +52,7 @@ fn read_publish_bytes(buffer: &[u8]) -> (String, String, u8, u16){
     let message: String;
     // Reads the message from buffer
     (message, reader_index) = read_utf_8_string_with_end_index(buffer, reader_index, package_length-1);
-
+    let _ = reader_index;
     (topic, message, qos, packet_identifier)
 }
 

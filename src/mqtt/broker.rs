@@ -1,6 +1,6 @@
-use std::{borrow::Borrow, net::TcpListener, sync::{Arc, Mutex}};
+use std::{net::TcpListener, sync::{Arc, Mutex}};
 use rand::Rng;
-use crate::mqtt::broker_state::Client;
+
 
 use crate::mqtt::client_handler::handle_client;
 use std::thread;
@@ -11,10 +11,8 @@ use super::broker_state::{self, BrokerState};
 pub fn start_broker() -> () {
     println!("Starting broker");
     let listener = TcpListener::bind("0.0.0.0:7878");
-    let mut total_clients: u8 = 0;
     let broker_state: Arc<Mutex<BrokerState>> = Arc::new(Mutex::new(broker_state::BrokerState::new()));
     for stream in listener.unwrap().incoming() {
-        total_clients += 1;
         let broker_state: Arc<Mutex<BrokerState>> = Arc::clone(&broker_state);
         thread::spawn(move || {
             let thread_id = create_thread_id();
