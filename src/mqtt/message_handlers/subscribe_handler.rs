@@ -1,6 +1,6 @@
-use std::{net::{TcpStream}, sync::MutexGuard};
+use std::{net::TcpStream, sync::MutexGuard};
 
-use crate::mqtt::{broker_state::{BrokerState, Subscription}, message_sender::{send_response}, message_type::MessageType};
+use crate::mqtt::{broker_state::{BrokerState, Subscription}, message_sender::send_response, message_type::MessageType};
 
 
 
