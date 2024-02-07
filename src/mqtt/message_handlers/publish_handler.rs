@@ -2,11 +2,11 @@ use std::{net::TcpStream, sync::MutexGuard};
 
 use crate::mqtt::{broker_state::{BrokerState, SubscriptionMessage}, message_handlers::message_reader::{read_package_length, read_utf_8_string_with_end_index, read_utf_8_string_with_length_bytes}, message_type::MessageType};
 use crate::mqtt::broker_state::MessageState;
-use crate::mqtt::message_sender::{send_response_packet, get_packet_identifier_to_u16};
+use crate::mqtt::message_sender::{send_response_packet};
 
 
-pub fn handle_publish(stream: &mut TcpStream, buffer: &[u8], _thread_id: f64, mut broker_state: MutexGuard<'_, BrokerState>){
-    let ( topic, message, qos, packet_identifier) = read_publish_bytes(buffer);
+pub fn handle_publish(packet_identifier: u16, stream: &mut TcpStream, buffer: &[u8], mut broker_state: MutexGuard<'_, BrokerState>){
+    let ( topic, message, qos) = read_publish_bytes(buffer);
     
     match qos{
             1 => {
@@ -24,7 +24,7 @@ pub fn handle_publish(stream: &mut TcpStream, buffer: &[u8], _thread_id: f64, mu
 }
 
 
-fn read_publish_bytes(buffer: &[u8]) -> (String, String, u8, u16){
+fn read_publish_bytes(buffer: &[u8]) -> (String, String, u8){
     let mut reader_index = 0;
 
     println!("{:?}", buffer);
@@ -40,12 +40,8 @@ fn read_publish_bytes(buffer: &[u8]) -> (String, String, u8, u16){
     let topic: String;
     // Reads the topics from buffer
     (topic, reader_index) = read_utf_8_string_with_length_bytes(buffer, reader_index);
-    
-    let mut packet_identifier: u16 = 0;
 
     if qos > 0 {
-        packet_identifier = get_packet_identifier_to_u16(buffer, reader_index);
-
         reader_index += 2; // Skips the packet identifier
     }
 
@@ -53,7 +49,7 @@ fn read_publish_bytes(buffer: &[u8]) -> (String, String, u8, u16){
     // Reads the message from buffer
     (message, reader_index) = read_utf_8_string_with_end_index(buffer, reader_index, package_length-1);
     let _ = reader_index;
-    (topic, message, qos, packet_identifier)
+    (topic, message, qos)
 }
 
 // Function to process the publish message

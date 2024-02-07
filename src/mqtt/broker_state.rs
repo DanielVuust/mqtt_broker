@@ -1,5 +1,3 @@
-use std::alloc::System;
-
 use time::{OffsetDateTime, PrimitiveDateTime};
 
 #[derive(Debug)]
@@ -50,9 +48,9 @@ pub enum MessageState {
     PublishReleased,
 
     // Subscribe states
-    SubscriptionAcknowledged,
-    SubscriptionReceived,
-    SubscriptionCompleted,
+    MessageAcknowledged,
+    MessageReceived,
+    MessageCompleted,
 }
 
 impl BrokerState {
@@ -91,6 +89,22 @@ impl Client {
             cancellation_requested: cancellation_requested,
         }
     }
+
+    pub fn update_message_state(&mut self, packet_identifier: u16, new_state: MessageState) {
+        for subscription in &mut self.subscriptions {
+            for message in &mut subscription.messages {
+                if message.packet_identifier == packet_identifier {
+                    message.update_state(new_state.clone());
+                }
+            }
+        }
+    }
+
+    pub fn remove_message(&mut self, packet_identifier: u16) {
+        for subscription in &mut self.subscriptions {
+            subscription.messages.retain(|message| message.packet_identifier != packet_identifier);
+        }
+    }
 }
 
 impl Subscription {
@@ -118,6 +132,11 @@ impl SubscriptionMessage {
         self.message_state = new_state;
         self.last_updated = OffsetDateTime::now_utc();
         //self.retry_count = 0; // Reset the retry count
+    }
+
+    pub fn add_retry(&mut self) {
+        self.retry_count += 1;
+        self.last_updated = OffsetDateTime::now_utc();
     }
 }
 
