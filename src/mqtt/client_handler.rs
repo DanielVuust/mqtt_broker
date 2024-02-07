@@ -5,7 +5,7 @@ use std::thread::{self, sleep};
 use std::time::Duration;
 use crate::mqtt::message_handlers::connect_handler::connect;
 use crate::mqtt::message_handlers::ping_handler::ping_resp;
-use crate::mqtt::message_handlers::publish_handler::handle_publish;
+use crate::mqtt::message_handlers::publish_handler::{handle_publish, process_publish};
 use crate::mqtt::message_handlers::subscribe_handler::handle_subscribe;
 use crate::mqtt::message_handlers::unsubscribe_handle::handle_unsubscribe;
 use crate::mqtt::message_sender::{get_packet_identifier_to_u16, send_response, send_response_packet};
@@ -32,8 +32,11 @@ pub fn handle_client(mut stream: TcpStream, arc_broker_state: Arc<Mutex<BrokerSt
     
     println!("continue");
 
+    //Delete this
+    first_stream.set_read_timeout(Some(Duration::from_secs(10)));
+
     // Reads data from stream until connection is closed
-    while match first_stream.read(&mut buffer) {
+    'tcpReader: while match first_stream.read(&mut buffer) {
         
         Ok(size) => {
             let mut current_broker_state = arc_broker_state.lock().unwrap();
@@ -114,10 +117,21 @@ pub fn handle_client(mut stream: TcpStream, arc_broker_state: Arc<Mutex<BrokerSt
         Err(_) => {
             println!("An error occurred, terminating connection with {}", stream.peer_addr().unwrap());
             stream.shutdown(std::net::Shutdown::Both).unwrap();
-            false
+            false;
+            break 'tcpReader;
         }
-    } {}
+    }
+    {}
+    {
+        // Store will message to subscriber.
+        let mut current_broker_state1 = arc_broker_state.lock().unwrap();
+        let current_client = current_broker_state1.clients.iter_mut().find(|client| client.thread_id == thread_id).unwrap();
+        
+        let current_client = current_client.clone();
+        process_publish(&mut current_broker_state1, &current_client.will_topic, &current_client.will_text, current_client.will_qos, MessageState::None, 44);
+    }
 }
+
 
 fn handle_second_stream( stream: &mut TcpStream, arc_broker_state: Arc<Mutex<BrokerState>>, thread_id: f64,){
     loop{

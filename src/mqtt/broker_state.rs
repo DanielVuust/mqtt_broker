@@ -5,7 +5,7 @@ pub struct BrokerState {
     pub clients: Vec<Client>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Client {
     pub thread_id: f64,
     pub cancellation_requested: bool,
