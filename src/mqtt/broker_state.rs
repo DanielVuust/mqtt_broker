@@ -23,7 +23,7 @@ pub struct Client {
 #[derive(Debug, Clone)]
 pub struct Subscription {
     pub topic_title: String,
-    pub qos: u8,
+    pub sub_qos: u8,
     pub messages: Vec<SubscriptionMessage>,
 }
 
@@ -31,7 +31,7 @@ pub struct Subscription {
 pub struct SubscriptionMessage {
     pub packet_identifier: u16,
     pub message: String,
-    pub qos: u8,
+    pub message_qos: u8,
     pub message_state: MessageState,
     pub last_updated: OffsetDateTime, // Timestamp for last state/message update
     pub retry_count: u8, // Number of times the message has been retried
@@ -113,7 +113,7 @@ impl Subscription {
     pub fn new(topic: String, qos: u8) -> Self {
         Subscription {
             topic_title: topic,
-            qos: qos,
+            sub_qos: qos,
             messages: Vec::new(),
         }
     }
@@ -124,7 +124,7 @@ impl SubscriptionMessage {
         SubscriptionMessage {
             packet_identifier: packet_identifier,
             message: message,
-            qos: qos,
+            message_qos: qos,
             message_state: message_state,
             last_updated: OffsetDateTime::now_utc(),
             retry_count: 0,

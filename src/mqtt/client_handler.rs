@@ -158,7 +158,7 @@ fn handle_second_stream( stream: &mut TcpStream, arc_broker_state: Arc<Mutex<Bro
                 matches!(message.message_state, MessageState::MessageReceived) &&
                 message.last_updated + time::Duration::seconds(message_retry_timer) < OffsetDateTime::now_utc()
                 {
-                    send_publish_message(message.packet_identifier, stream, subscription.topic_title.to_string(), message.message.to_string(), false, message.qos);
+                    send_publish_message(message.packet_identifier, stream, subscription.topic_title.to_string(), message.message.to_string(), false, subscription.sub_qos);
                     message.add_retry();
 
                     if message.retry_count >= max_retry_count {
@@ -171,10 +171,10 @@ fn handle_second_stream( stream: &mut TcpStream, arc_broker_state: Arc<Mutex<Bro
                 matches!(message.message_state, MessageState::PublishReleased) || 
                 matches!(message.message_state, MessageState::None) 
                 {
-                    if message.qos > 0 {
+                    if message.message_qos > 0 {
                         message.update_state(MessageState::PublishSent);
                     }
-                    send_publish_message(message.packet_identifier, stream, subscription.topic_title.to_string(), message.message.to_string(), false, message.qos);
+                    send_publish_message(message.packet_identifier, stream, subscription.topic_title.to_string(), message.message.to_string(), false, subscription.sub_qos);
                 }
 
                 // Removes message from subscription message list if completed
@@ -213,7 +213,7 @@ fn handle_second_stream( stream: &mut TcpStream, arc_broker_state: Arc<Mutex<Bro
     }
 }
 
-fn send_publish_message(packet_identifier: u16, stream: &mut TcpStream, topic_name: String, message: String, is_retry: bool, message_qos: u8){
+fn send_publish_message(packet_identifier: u16, stream: &mut TcpStream, topic_name: String, message: String, is_retry: bool, sub_qos: u8){
     let mut response: Vec<u8> = Vec::new();
 
     let mut message_type = MessageType::Publish.to_u8();
@@ -222,7 +222,7 @@ fn send_publish_message(packet_identifier: u16, stream: &mut TcpStream, topic_na
         message_type |= 0b00001000; // Sets the DUP flag to 1 - if message is a retry
     }
 
-    message_type |= (message_qos << 1) & 0b00000110; // Sets the QoS level
+    message_type |= (sub_qos << 1) & 0b00000110; // Sets the QoS level
 
     response.push(message_type);
     response.push(0); // Remaining length
@@ -232,7 +232,7 @@ fn send_publish_message(packet_identifier: u16, stream: &mut TcpStream, topic_na
     response.extend_from_slice(topic_name.as_bytes());
 
     // Appends packet identifier if QoS level is 1 or 2
-    if message_qos > 0 {
+    if sub_qos > 0 {
         response.push((packet_identifier / 256) as u8); // Packet identifier MSB
         response.push((packet_identifier % 256) as u8); // Packet identifier LSB
     }
