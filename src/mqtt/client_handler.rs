@@ -1,11 +1,11 @@
 use std::io::Read;
 use std::net::TcpStream;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, MutexGuard};
 use std::thread::{self, sleep};
 use std::time::{Duration};
-use crate::mqtt::message_handlers::connect_handler::handle_connect;
+use crate::mqtt::message_handlers::connect_handler::{connect};
 use crate::mqtt::message_handlers::ping_handler::ping_resp;
-use crate::mqtt::message_handlers::publish_handler::handle_publish;
+use crate::mqtt::message_handlers::publish_handler::{handle_publish};
 use crate::mqtt::message_handlers::subscribe_handler::handle_subscribe;
 use crate::mqtt::message_handlers::pubrel_handler::handle_pubrel;
 use crate::mqtt::message_handlers::unsubscribe_handle::handle_unsubscribe;
@@ -24,29 +24,7 @@ pub fn handle_client(mut stream: TcpStream, arc_broker_state: Arc<Mutex<BrokerSt
     
     let mut current_broker_state = arc_broker_state.lock().unwrap();
 
-    match first_stream.read(&mut buffer){
-     Ok(size) => {
-        match MessageType::from_u8(buffer[0]) {
-            // Connect
-            Some(MessageType::Connect) => {
-                println!("CONNECT message received");
-                handle_connect(&buffer, thread_id, current_broker_state);
-                
-                let mut response: [u8; 4] = [0; 4];
-                response[0] = MessageType::Connack.to_u8();
-                response[1] = 2;
-                send_response(&mut stream, &response);
-            }
-            _ => {
-                println!("First command must be connect");
-            }
-        }
-     }
-     Err(_) => {
-        println!("An error occurred, terminating connection with {}", stream.peer_addr().unwrap());
-        stream.shutdown(std::net::Shutdown::Both).unwrap();
-    }
-    } 
+    connect(&mut first_stream, &mut buffer, thread_id, current_broker_state);
 
     let arc2 = Arc::clone(&arc_broker_state);
     thread::spawn(move || {
@@ -74,7 +52,6 @@ pub fn handle_client(mut stream: TcpStream, arc_broker_state: Arc<Mutex<BrokerSt
                     Some(MessageType::Publish) =>{
                         println!("PUBLISH message received");
                         handle_publish(&mut stream, &buffer, thread_id, current_broker_state);
-
                     }
                     // Puback
                     Some(MessageType::Puback) =>{
