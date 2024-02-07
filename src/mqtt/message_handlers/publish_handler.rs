@@ -57,7 +57,7 @@ fn read_publish_bytes(buffer: &[u8]) -> (String, String, u8, u16){
 }
 
 // Function to process the publish message
-fn process_publish(broker_state: &mut MutexGuard<'_, BrokerState>, topic: &String, message: &String, qos: u8, message_state: MessageState, packet_identifier: u16) {
+pub fn process_publish(broker_state: &mut MutexGuard<'_, BrokerState>, topic: &String, message: &String, qos: u8, message_state: MessageState, packet_identifier: u16) {
     //Loops though all connected clients and checks if they have any subscriptions that matches the topic,
     //if so the message will be push to the subscription message list 
     for client in broker_state.clients.iter_mut() {
