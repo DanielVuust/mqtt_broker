@@ -151,6 +151,22 @@ fn handle_second_stream( stream: &mut TcpStream, arc_broker_state: Arc<Mutex<Bro
 
         for subscription in &mut client.subscriptions {
             for message in &mut subscription.messages {
+                // Sends new message
+                if matches!(message.message_state, MessageState::PublishAcknowledged) || 
+                matches!(message.message_state, MessageState::PublishReleased) || 
+                matches!(message.message_state, MessageState::None) 
+                {
+                    send_publish_message(message.packet_identifier, stream, subscription.topic_title.to_string(), message.message.to_string(), false, subscription.sub_qos);
+
+                    if message.message_qos > 0 {
+                        // Updates message to completed if QoS level on subscription is 0
+                        if subscription.sub_qos == 0 {
+                            message.update_state(MessageState::MessageCompleted);
+                        }else {
+                            message.update_state(MessageState::PublishSent);
+                        }
+                    }
+                }
 
                 // Resends message if no response packet from client (QoS 1 and 2)
                 if matches!(message.message_state, MessageState::PublishSent) && 
@@ -164,17 +180,6 @@ fn handle_second_stream( stream: &mut TcpStream, arc_broker_state: Arc<Mutex<Bro
                     if message.retry_count >= max_retry_count {
                         message.update_state(MessageState::MessageUnsuccessful);
                     }
-                }
-
-                // Sends new message
-                if matches!(message.message_state, MessageState::PublishAcknowledged) || 
-                matches!(message.message_state, MessageState::PublishReleased) || 
-                matches!(message.message_state, MessageState::None) 
-                {
-                    if message.message_qos > 0 {
-                        message.update_state(MessageState::PublishSent);
-                    }
-                    send_publish_message(message.packet_identifier, stream, subscription.topic_title.to_string(), message.message.to_string(), false, subscription.sub_qos);
                 }
 
                 // Removes message from subscription message list if completed
@@ -225,7 +230,7 @@ fn send_publish_message(packet_identifier: u16, stream: &mut TcpStream, topic_na
     message_type |= (sub_qos << 1) & 0b00000110; // Sets the QoS level
 
     response.push(message_type);
-    response.push(0); // Remaining length
+    response.push(0); // Remaining length (placeholder)
     response.push((topic_name.len() / 256) as u8); // Topic length MSB
     response.push((topic_name.len() % 256) as u8); // Topic length LSB
     
