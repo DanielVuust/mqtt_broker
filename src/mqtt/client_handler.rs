@@ -2,14 +2,14 @@ use std::io::Read;
 use std::net::TcpStream;
 use std::sync::{Arc, Mutex};
 use std::thread::{self, sleep};
-use std::time::{Duration};
-use crate::mqtt::message_handlers::connect_handler::{connect};
+use std::time::Duration;
+use crate::mqtt::message_handlers::connect_handler::connect;
 use crate::mqtt::message_handlers::ping_handler::ping_resp;
 use crate::mqtt::message_handlers::publish_handler::{handle_publish, process_publish};
 use crate::mqtt::message_handlers::subscribe_handler::handle_subscribe;
 use crate::mqtt::message_handlers::pubrel_handler::handle_pubrel;
 use crate::mqtt::message_handlers::unsubscribe_handle::handle_unsubscribe;
-use crate::mqtt::message_sender::{ send_response};
+use crate::mqtt::message_sender::send_response;
 use crate::mqtt::message_type::MessageType;
 use time::{OffsetDateTime, PrimitiveDateTime};
 
@@ -33,6 +33,7 @@ pub fn handle_client(mut stream: TcpStream, arc_broker_state: Arc<Mutex<BrokerSt
     
     println!("continue");
 
+    //Delete this
     first_stream.set_read_timeout(Some(Duration::from_secs(10)));
 
     // Reads data from stream until connection is closed
@@ -113,8 +114,7 @@ pub fn handle_client(mut stream: TcpStream, arc_broker_state: Arc<Mutex<BrokerSt
     }
     {}
     {
-
-        // Store will message to subscriber.
+    // Store will message to subscriber.
     let mut current_broker_state1 = arc_broker_state.lock().unwrap();
     let current_client = current_broker_state1.clients.iter_mut().find(|client| client.thread_id == thread_id).unwrap();
     
