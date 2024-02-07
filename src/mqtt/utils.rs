@@ -18,7 +18,6 @@ pub fn bytes_to_string(bytes: &[u8]) -> String {
 
 // Get length
 pub fn get_length(buffer: &[u8], position: u8) -> usize {
-
     // If the first bit is 0, the length is 1 byte long
     if buffer[position as usize] < 128 {
         return buffer[position as usize] as usize;

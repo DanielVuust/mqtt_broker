@@ -6,8 +6,6 @@ use super::message_reader::read_uft_8_string_with_length_bytes;
 
 
 pub fn handle_publish(stream: &mut TcpStream, buffer: &[u8], thread_id: f64, mut broker_state: MutexGuard<'_, BrokerState>){
-    
-    
     let topic: String;
     let message: String;
 
@@ -49,6 +47,29 @@ fn send_puback_response(stream: &mut TcpStream,){
     let mut response: [u8; 2] = [0; 2];
     response[0] = MessageType::Puback.to_u8();
     response[1] = 0;
+
+    send_response(stream, &response);
+}
+
+pub fn send_publish_message(stream: &mut TcpStream, topic_name: String, message: String){
+
+    let mut response: Vec<u8> = [].to_vec();
+    response.push(MessageType::Publish.to_u8());
+    response.push(0);
+    response.push((topic_name.len() / 256) as u8);
+    response.push((topic_name.len() % 256) as u8);
+    
+    for i in topic_name.chars(){
+        response.push(i as u8);
+    }
+    
+    for i in message.chars(){
+        response.push(i as u8);
+    }
+    
+    response[1] = response.len() as u8 - 2;
+
+    println!("{:?}", response);
 
     send_response(stream, &response);
 }
