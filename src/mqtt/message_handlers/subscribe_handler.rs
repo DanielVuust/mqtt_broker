@@ -5,7 +5,7 @@ use crate::mqtt::{broker_state::{BrokerState, Subscription}, message_sender::sen
 pub fn handle_subscribe(stream: &mut TcpStream, buffer: &[u8], thread_id: f64, broker_state: MutexGuard<'_, BrokerState>){
     // Extract the topic name and QoS level
     let (topic, requested_qos) = get_topic_name_and_qos(buffer, 4);
-    //println!("Topic: {:?}, Requested QoS: {}", topic, requested_qos);
+    println!("Topic: {:?}, Requested QoS: {}", topic, requested_qos);
 
     // Change broker state to include the new subscription with its requested QoS
     add_topic_to_broker_state(topic.clone(), thread_id, requested_qos, broker_state);

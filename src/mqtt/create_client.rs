@@ -1,10 +1,10 @@
-use std::sync::MutexGuard;
+use std::{net::TcpStream, sync::MutexGuard};
 
 use crate::mqtt::broker_state::Client;
 
 use super::broker_state::BrokerState;
 
-pub fn create_client (buffer: &[u8], thread_id: f64, mut broker_state: MutexGuard<'_, BrokerState>){
+pub fn create_client (buffer: &[u8], thread_id: f64, mut broker_state: MutexGuard<'_, BrokerState>, stream:  &mut TcpStream){
     let mut current_index_in_buffer :usize; // Removed value 2
     //Skip to connectflag. 
     //TODO make sure its the right position.
@@ -47,7 +47,8 @@ pub fn create_client (buffer: &[u8], thread_id: f64, mut broker_state: MutexGuar
         will_qos_flag,
         clean_session_flag,
         keep_alive_seconds,
-    Vec::new(), false);
+    Vec::new(), false,
+        stream.try_clone().unwrap());
     (*broker_state).clients.push(new_client);
 }
 
@@ -99,7 +100,7 @@ fn decode_flags(mut flag_byte: u8) -> (bool, bool, bool, u8, bool, bool) {
 fn extract_keep_alive_seconds(buffer: &[u8], current_index_in_buffer: usize) -> (usize, usize) {
     // Extract keep-alive seconds
     let keep_alive_seconds = buffer[current_index_in_buffer] as usize * 256 + buffer[current_index_in_buffer + 1] as usize;
-    
+    ;
     // Print the extracted keep-alive seconds
     println!("keep_alive_seconds: {:?}", keep_alive_seconds);
 

@@ -26,7 +26,7 @@ pub fn connect(stream: &mut TcpStream, buffer: &mut [u8], thread_id: f64, broker
 
 pub fn handle_connect(stream: &mut TcpStream, buffer: &[u8], thread_id: f64, broker_state: MutexGuard<'_, BrokerState>) {
     // Remaining code...
-    create_client(&buffer, thread_id, broker_state);
+    create_client(&buffer, thread_id, broker_state, stream);
     send_connack(stream);
 }
 
