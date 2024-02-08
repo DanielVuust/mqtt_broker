@@ -1,14 +1,13 @@
 use std::io::Read;
 use std::net::TcpStream;
 use std::sync::{Arc, Mutex};
-use std::thread::{self, sleep};
 use std::time::Duration;
 use crate::mqtt::message_handlers::connect_handler::connect;
 use crate::mqtt::message_handlers::ping_handler::ping_resp;
 use crate::mqtt::message_handlers::publish_handler::{handle_publish, process_publish};
 use crate::mqtt::message_handlers::subscribe_handler::handle_subscribe;
 use crate::mqtt::message_handlers::unsubscribe_handle::handle_unsubscribe;
-use crate::mqtt::message_sender::{get_packet_identifier_to_u16, send_response, send_response_packet};
+use crate::mqtt::message_sender::{get_packet_identifier_to_u16, send_response_packet};
 use crate::mqtt::message_type::MessageType;
 use time::{OffsetDateTime, PrimitiveDateTime};
 
@@ -19,7 +18,6 @@ pub fn handle_client(mut stream: TcpStream, arc_broker_state: Arc<Mutex<BrokerSt
     println!("{}", thread_id);
     let mut buffer = [0; 2024];
     let mut first_stream = stream.try_clone().expect("Cannot clone stream");
-    let mut second_stream = stream.try_clone().expect("Cannot clone stream");
     
     let current_broker_state = arc_broker_state.lock().unwrap();
     

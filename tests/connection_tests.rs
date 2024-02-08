@@ -13,7 +13,7 @@ fn connect_with_no_falgs_test() {
     start_test_broker();
 
     //Creates a client and connects it to the broker.
-    let mut client = TestClient::connect("127.0.0.1:6942").unwrap();
+    let mut client = TestClient::connect("127.0.0.1:7878").unwrap();
 
     //Creates a connect request 
     let connect_request = connect_vec(0, 60, "test".to_string());
@@ -37,7 +37,7 @@ fn connect_with_long_client_indetifier(){
     start_test_broker();
 
     //Creates a client and connects it to the broker.
-    let mut client = TestClient::connect("127.0.0.1:6942").unwrap();
+    let mut client = TestClient::connect("127.0.0.1:7878").unwrap();
 
     //Creates a connect request 
     let connect_request = connect_vec(0, 60, 

@@ -40,11 +40,12 @@ fn start_state_keeper_thread(broker_state:  Arc<Mutex<BrokerState>>){
         loop{
             sleep(Duration::from_millis(750));
             let mut current_broker_state = broker_state.lock().unwrap();
-            for client in current_broker_state.clients.iter_mut(){
+            for (index, client) in current_broker_state.clients.iter_mut().enumerate(){
                 
                 if client.cancellation_requested {
                     println!("Removing disconnected client form state");
                     client.tcp_stream.shutdown(std::net::Shutdown::Both).unwrap();
+                    current_broker_state.clients.remove(index);
                     break;
                 }
         

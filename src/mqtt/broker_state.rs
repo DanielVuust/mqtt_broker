@@ -37,8 +37,8 @@ pub struct SubscriptionMessage {
     pub message: String,
     pub message_qos: u8,
     pub message_state: MessageState,
-    pub last_updated: OffsetDateTime, // Timestamp for last state/message update
-    pub retry_count: u8, // Number of times the message has been retried
+    pub last_updated: OffsetDateTime,       // Timestamp for last state/message update
+    pub retry_count: u8,                    // Number of times the message has been retried
 }
 
 #[derive(Debug, Clone)]

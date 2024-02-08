@@ -19,7 +19,7 @@ fn publish_to_topic_test() {
     start_test_broker();
 
     //Creates a client and connects it to the broker.
-    let mut client = TestClient::connect("127.0.0.1:6942").unwrap();
+    let mut client = TestClient::connect("127.0.0.1:7878").unwrap();
 
     //Connects to the broker using a connect request
     client = connect_to_broker(client, "test".to_string(), 60);

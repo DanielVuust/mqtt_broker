@@ -14,7 +14,7 @@ fn connect_message_test() {
     thread::sleep(Duration::from_secs(1));
 
     // Connecting TestClient to the broker
-    let mut client = TestClient::connect("127.0.0.1:6942").expect("Failed to connect to the broker");
+    let mut client = TestClient::connect("127.0.0.1:7878").expect("Failed to connect to the broker");
 
     // Creates a Connect message
     let connect_msg = construct_connect_message();
