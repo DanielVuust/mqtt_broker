@@ -35,7 +35,7 @@ pub struct Subscription {
 pub struct SubscriptionMessage {
     pub packet_identifier: u16,
     pub message: String,
-    pub message_qos: u8,
+    pub pub_qos: u8,
     pub message_state: MessageState,
     pub last_updated: OffsetDateTime,       // Timestamp for last state/message update
     pub retry_count: u8,                    // Number of times the message has been retried
@@ -148,7 +148,7 @@ impl SubscriptionMessage {
         SubscriptionMessage {
             packet_identifier: packet_identifier,
             message: message,
-            message_qos: qos,
+            pub_qos: qos,
             message_state: message_state,
             last_updated: OffsetDateTime::now_utc(),
             retry_count: 0,
