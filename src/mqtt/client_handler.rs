@@ -37,7 +37,6 @@ pub fn handle_client(mut stream: TcpStream, arc_broker_state: Arc<Mutex<BrokerSt
 
     // Reads data from stream until connection is closed
     'tcpReader: while match first_stream.read(&mut buffer) {
-        
         Ok(size) => {
             let mut current_broker_state = arc_broker_state.lock().unwrap();
             let current_client = (*current_broker_state).clients.iter_mut().enumerate().find(| x: &(usize, &mut crate::mqtt::broker_state::Client) | &x.1.thread_id == &thread_id ).unwrap().1;
@@ -149,6 +148,7 @@ fn handle_second_stream( stream: &mut TcpStream, arc_broker_state: Arc<Mutex<Bro
         let message_retry_timer = 10;
         let max_retry_count = 5;
 
+        // Loops through all messages in subscription message list
         for subscription in &mut client.subscriptions {
             for message in &mut subscription.messages {
                 // Sends new message
