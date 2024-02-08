@@ -35,7 +35,6 @@ pub fn handle_client(mut stream: TcpStream, arc_broker_state: Arc<Mutex<BrokerSt
     std::mem::drop(current_broker_state);
     // Reads data from stream until connection is closed
     'tcpReader: while match first_stream.read(&mut buffer) {
-        
         Ok(size) => {
             println!("message received");
             let mut current_broker_state = arc_broker_state.lock().unwrap();
