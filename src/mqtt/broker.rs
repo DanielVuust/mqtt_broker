@@ -59,9 +59,14 @@ fn start_state_keeper_thread(broker_state:  Arc<Mutex<BrokerState>>){
                         matches!(message.message_state, MessageState::PublishReleased) || 
                         matches!(message.message_state, MessageState::None) 
                         {
+                            // Updates subscription QoS level if publisher QoS level is higher
+                            if message.pub_qos < subscription.sub_qos {
+                                subscription.sub_qos = message.pub_qos;
+                            }
+
                             send_publish_message(message.packet_identifier, &mut client.tcp_stream, subscription.topic_title.to_string(), message.message.to_string(), false, subscription.sub_qos);
         
-                            if message.message_qos > 0 {
+                            if message.pub_qos > 0 {
                                 // Updates message to completed if QoS level on subscription is 0
                                 if subscription.sub_qos == 0 {
                                     message.update_state(MessageState::MessageCompleted);
