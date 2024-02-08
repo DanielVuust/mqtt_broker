@@ -10,12 +10,12 @@ pub fn handle_publish(stream: &mut TcpStream, buffer: &[u8], mut broker_state: M
     
     match qos{
             1 => {
-                send_response_packet(stream, MessageType::Puback, packet_identifier);
                 process_publish(&mut broker_state, &topic, &message, qos, MessageState::PublishAcknowledged, packet_identifier);
+                send_response_packet(stream, MessageType::Puback, packet_identifier);
             },
             2 => {
-                send_response_packet(stream, MessageType::Pubrec, packet_identifier);
                 process_publish(&mut broker_state, &topic, &message, qos, MessageState::PublishReceived, packet_identifier);
+                send_response_packet(stream, MessageType::Pubrec, packet_identifier);
             },
             _ => {
                 process_publish(&mut broker_state, &topic, &message, qos, MessageState::None, packet_identifier);
