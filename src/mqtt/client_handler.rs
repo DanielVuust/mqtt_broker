@@ -34,12 +34,8 @@ pub fn handle_client(mut stream: TcpStream, arc_broker_state: Arc<Mutex<BrokerSt
     // Reads data from stream until connection is closed
     'tcpReader: while match first_stream.read(&mut buffer) {
         Ok(size) => {
-            println!("message received");
             let mut current_broker_state = arc_broker_state.lock().unwrap();
-            println!("message received2");
-          
             let current_client = (*current_broker_state).clients.iter_mut().enumerate().find(| x: &(usize, &mut crate::mqtt::broker_state::Client) | &x.1.thread_id == &thread_id ).unwrap().1;
-            println!("message received3");
 
             if size == 0 {
                 println!("No data received, closing connection");

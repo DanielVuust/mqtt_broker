@@ -17,7 +17,6 @@ pub fn handle_subscribe(stream: &mut TcpStream, buffer: &[u8], thread_id: f64, b
     response[2] = buffer[2]; // Packet identifier MSB
     response[3] = buffer[3]; // Packet identifier LSB
     response[4] = requested_qos; // QoS level
-    println!("Response: {:?}", response);
 
     // Send the SUBACK response to the client.
     send_response(stream, &response);

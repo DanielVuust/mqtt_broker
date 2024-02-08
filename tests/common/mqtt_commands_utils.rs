@@ -38,6 +38,8 @@ pub fn subscribe_vec(topic_names: Vec<String>, requested_qos: Vec<u8>, packet_id
     for (index, topic_name) in topic_names.iter().enumerate()
     {
         bytes.append(&mut convert_u16_to_two_u8s_be(topic_name.len() as u16).to_vec()); // Client identifier length
+        bytes.append(&mut topic_name.as_bytes().to_vec()); 
+
         bytes.append(&mut vec![requested_qos[index]]);
     }
     bytes[1] = bytes.len() as u8 - 2; 
