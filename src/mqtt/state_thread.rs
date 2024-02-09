@@ -7,7 +7,7 @@ use crate::mqtt::{message_sender::send_response, message_type::MessageType};
 use super::broker_state::{BrokerState, MessageState};
 
 
-pub fn start_state_keeper_thread(broker_state:  Arc<Mutex<BrokerState>>){
+pub fn state_keeper_loop(broker_state:  Arc<Mutex<BrokerState>>){
     
         loop{
             sleep(Duration::from_millis(750));

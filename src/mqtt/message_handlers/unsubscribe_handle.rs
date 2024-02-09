@@ -1,6 +1,6 @@
 use std::net::TcpStream;
 
-use crate::mqtt::broker_state::Client;
+use crate::mqtt::{broker_state::Client, message_sender::send_response, message_type::MessageType};
 
 
 
@@ -57,6 +57,13 @@ fn unsubscribe_from_topics(topics_to_unsunscribe_from: Vec<String>, client: &mut
 fn get_length(buffer: &[u8], index: usize) -> usize {
     buffer[index] as usize * 256 as usize + buffer[index + 1] as usize
 }
-fn send_unsuback(_tream: &mut TcpStream, _package_identifier: u16){
+fn send_unsuback(stream: &mut TcpStream, _package_identifier: u16){
+    // Create a unsuback response packet.
+    let mut response: [u8; 4] = [0; 4];
+    response[0] = MessageType::Unsuback.to_u8();
+    response[1] = 0x02; // Remaining length
+    response[2] = (_package_identifier / 256) as u8; // Packet identifier MSB
+    response[3] = (_package_identifier % 256) as u8; // Packet identifier LSB
 
+    send_response(stream, &response);
 }

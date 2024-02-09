@@ -4,7 +4,7 @@ use rand::Rng;
 use crate::mqtt::client_handler::handle_client;
 use std::thread;
 
-use super::{broker_state::{self, BrokerState}, state_thread::start_state_keeper_thread};
+use super::{broker_state::{self, BrokerState}, state_thread::state_keeper_loop};
 
 
 pub fn start_broker() -> () {
@@ -14,7 +14,6 @@ pub fn start_broker() -> () {
 
     //Creates global state that is shared between threads.
     let broker_state: Arc<Mutex<BrokerState>> = Arc::new(Mutex::new(broker_state::BrokerState::new()));
-
 
     //Clones the broker state and starts the thread to keep track of state actions.
     let cloned_broker_state = Arc::clone(&broker_state);
@@ -43,6 +42,6 @@ fn create_random_thread_id() -> f64{
 
 fn start_thread_to_do_state_actions(broker_state:  Arc<Mutex<BrokerState>>){
     thread::spawn(move || {
-        start_state_keeper_thread(broker_state)
+        state_keeper_loop(broker_state)
     });
 }
